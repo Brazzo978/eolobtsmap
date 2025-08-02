@@ -8,6 +8,7 @@ if (process.env.S3_BUCKET) {
 }
 const db = require('../db');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
+const { logMarkerAction } = require('../middleware/audit');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -109,70 +110,92 @@ router.get('/:id', (req, res) => {
   });
 });
 
-router.post('/', authenticateToken, authorizeRoles('admin', 'editor'), validateMarkerInput, (req, res) => {
-  const { lat, lng, descrizione, images, nome, autore } = req.body;
-  db.run(
-    'INSERT INTO markers (lat, lng, descrizione, nome, autore) VALUES (?, ?, ?, ?, ?)',
-    [lat, lng, descrizione || null, nome || null, autore || null],
-    function (err) {
-      if (err) {
-        return res.status(500).json({ error: 'DB error' });
-      }
-      const markerId = this.lastID;
-      if (images && images.length) {
-        const stmt = db.prepare(
-          'INSERT INTO marker_images (marker_id, url, didascalia) VALUES (?, ?, ?)'
-        );
-        for (const img of images) {
-          stmt.run(markerId, img.url, img.didascalia || null);
-        }
-        stmt.finalize((err2) => {
-          if (err2) {
-            return res.status(500).json({ error: 'DB error' });
-          }
-          res.status(201).json({ id: markerId });
-        });
-      } else {
-        res.status(201).json({ id: markerId });
-      }
-    }
-  );
-});
-
-router.put('/:id', authenticateToken, authorizeRoles('admin', 'editor'), validateMarkerInput, (req, res) => {
-  const { lat, lng, descrizione, images, nome, autore } = req.body;
-  const id = req.params.id;
-  db.run(
-    'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ? WHERE id = ?',
-    [lat, lng, descrizione || null, nome || null, autore || null, id],
-    function (err) {
-      if (err) {
-        return res.status(500).json({ error: 'DB error' });
-      }
-      db.run('DELETE FROM marker_images WHERE marker_id = ?', [id], (err2) => {
-        if (err2) {
+router.post(
+  '/',
+  authenticateToken,
+  authorizeRoles('admin', 'editor'),
+  validateMarkerInput,
+  (req, res, next) => {
+    const { lat, lng, descrizione, images, nome, autore } = req.body;
+    db.run(
+      'INSERT INTO markers (lat, lng, descrizione, nome, autore) VALUES (?, ?, ?, ?, ?)',
+      [lat, lng, descrizione || null, nome || null, autore || null],
+      function (err) {
+        if (err) {
           return res.status(500).json({ error: 'DB error' });
         }
+        const markerId = this.lastID;
         if (images && images.length) {
           const stmt = db.prepare(
             'INSERT INTO marker_images (marker_id, url, didascalia) VALUES (?, ?, ?)'
           );
           for (const img of images) {
-            stmt.run(id, img.url, img.didascalia || null);
+            stmt.run(markerId, img.url, img.didascalia || null);
           }
-          stmt.finalize((err3) => {
-            if (err3) {
+          stmt.finalize((err2) => {
+            if (err2) {
               return res.status(500).json({ error: 'DB error' });
             }
-            res.json({ id });
+            res.locals.markerId = markerId;
+            res.status(201).json({ id: markerId });
+            next();
           });
         } else {
-          res.json({ id });
+          res.locals.markerId = markerId;
+          res.status(201).json({ id: markerId });
+          next();
         }
-      });
-    }
-  );
-});
+      }
+    );
+  },
+  logMarkerAction('create')
+);
+
+router.put(
+  '/:id',
+  authenticateToken,
+  authorizeRoles('admin', 'editor'),
+  validateMarkerInput,
+  (req, res, next) => {
+    const { lat, lng, descrizione, images, nome, autore } = req.body;
+    const id = req.params.id;
+    db.run(
+      'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ? WHERE id = ?',
+      [lat, lng, descrizione || null, nome || null, autore || null, id],
+      function (err) {
+        if (err) {
+          return res.status(500).json({ error: 'DB error' });
+        }
+        db.run('DELETE FROM marker_images WHERE marker_id = ?', [id], (err2) => {
+          if (err2) {
+            return res.status(500).json({ error: 'DB error' });
+          }
+          if (images && images.length) {
+            const stmt = db.prepare(
+              'INSERT INTO marker_images (marker_id, url, didascalia) VALUES (?, ?, ?)'
+            );
+            for (const img of images) {
+              stmt.run(id, img.url, img.didascalia || null);
+            }
+            stmt.finalize((err3) => {
+              if (err3) {
+                return res.status(500).json({ error: 'DB error' });
+              }
+              res.locals.markerId = id;
+              res.json({ id });
+              next();
+            });
+          } else {
+            res.locals.markerId = id;
+            res.json({ id });
+            next();
+          }
+        });
+      }
+    );
+  },
+  logMarkerAction('update')
+);
 
 router.post(
   '/:id/images',
@@ -283,18 +306,26 @@ router.delete(
   }
 );
 
-router.delete('/:id', authenticateToken, authorizeRoles('admin', 'editor'), (req, res) => {
-  const id = req.params.id;
-  db.run('DELETE FROM markers WHERE id = ?', [id], function (err) {
-    if (err) {
-      return res.status(500).json({ error: 'DB error' });
-    }
-    if (this.changes === 0) {
-      return res.status(404).json({ error: 'Not found' });
-    }
-    res.sendStatus(204);
-  });
-});
+router.delete(
+  '/:id',
+  authenticateToken,
+  authorizeRoles('admin', 'editor'),
+  (req, res, next) => {
+    const id = req.params.id;
+    db.run('DELETE FROM markers WHERE id = ?', [id], function (err) {
+      if (err) {
+        return res.status(500).json({ error: 'DB error' });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'Not found' });
+      }
+      res.locals.markerId = id;
+      res.sendStatus(204);
+      next();
+    });
+  },
+  logMarkerAction('delete')
+);
 
 module.exports = router;
 
