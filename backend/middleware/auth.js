@@ -25,4 +25,13 @@ function authorizeRole(role) {
   };
 }
 
-module.exports = { authenticateToken, authorizeRole };
+function authorizeRoles(...roles) {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.sendStatus(403);
+    }
+    next();
+  };
+}
+
+module.exports = { authenticateToken, authorizeRole, authorizeRoles };

@@ -1,10 +1,12 @@
 const express = require('express');
 const authRouter = require('./auth');
 const { authenticateToken, authorizeRole } = require('./middleware/auth');
+const markersRouter = require('./markers');
 
 const app = express();
 app.use(express.json());
 app.use('/auth', authRouter);
+app.use('/markers', markersRouter);
 
 app.get('/admin', authenticateToken, authorizeRole('admin'), (req, res) => {
   res.json({ message: 'Welcome admin!' });
