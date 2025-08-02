@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  web:
+    image: node:18-alpine
+    command: sh -c "npm start"
+    ports:
+      - "3000:3000"
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: app
+
+  proxy:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    depends_on:
+      - web
