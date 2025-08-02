@@ -8,9 +8,17 @@ const auditLogsRouter = require('./auditLogs');
 const app = express();
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve the static frontend files
+const frontendPath = path.join(__dirname, '..', 'frontend');
+app.use(express.static(frontendPath));
 app.use('/auth', authRouter);
 app.use('/markers', markersRouter);
 app.use('/audit-logs', auditLogsRouter);
+
+// Return the frontend for the root path
+app.get('/', (req, res) => {
+  res.sendFile(path.join(frontendPath, 'index.html'));
+});
 
 app.get('/admin', authenticateToken, authorizeRole('admin'), (req, res) => {
   res.json({ message: 'Welcome admin!' });
