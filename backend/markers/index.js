@@ -1,6 +1,15 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const multer = require('multer');
+let AWS;
+if (process.env.S3_BUCKET) {
+  AWS = require('aws-sdk');
+}
 const db = require('../db');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = express.Router();
 
@@ -164,6 +173,115 @@ router.put('/:id', authenticateToken, authorizeRoles('admin', 'editor'), validat
     }
   );
 });
+
+router.post(
+  '/:id/images',
+  authenticateToken,
+  authorizeRoles('admin', 'editor'),
+  upload.single('image'),
+  (req, res) => {
+    const markerId = req.params.id;
+    const file = req.file;
+    const didascalia = req.body.didascalia || null;
+    if (!file) {
+      return res.status(400).json({ error: 'Image file is required' });
+    }
+    const saveUrl = (url) => {
+      db.run(
+        'INSERT INTO marker_images (marker_id, url, didascalia) VALUES (?, ?, ?)',
+        [markerId, url, didascalia],
+        function (err) {
+          if (err) {
+            return res.status(500).json({ error: 'DB error' });
+          }
+          res.status(201).json({ id: this.lastID, url });
+        }
+      );
+    };
+    if (process.env.S3_BUCKET) {
+      const s3 = new AWS.S3();
+      const key = `${Date.now()}_${file.originalname}`;
+      s3.upload(
+        {
+          Bucket: process.env.S3_BUCKET,
+          Key: key,
+          Body: file.buffer,
+          ContentType: file.mimetype,
+          ACL: 'public-read',
+        },
+        (err, data) => {
+          if (err) {
+            return res.status(500).json({ error: 'Upload error' });
+          }
+          saveUrl(data.Location);
+        }
+      );
+    } else {
+      const uploadsDir = path.join(__dirname, '..', 'uploads');
+      fs.mkdirSync(uploadsDir, { recursive: true });
+      const filename = `${Date.now()}_${file.originalname}`;
+      fs.writeFile(path.join(uploadsDir, filename), file.buffer, (err) => {
+        if (err) {
+          return res.status(500).json({ error: 'Upload error' });
+        }
+        saveUrl(`/uploads/${filename}`);
+      });
+    }
+  }
+);
+
+router.delete(
+  '/:markerId/images/:imageId',
+  authenticateToken,
+  authorizeRoles('admin', 'editor'),
+  (req, res) => {
+    const { markerId, imageId } = req.params;
+    db.get(
+      'SELECT url FROM marker_images WHERE id = ? AND marker_id = ?',
+      [imageId, markerId],
+      (err, row) => {
+        if (err) {
+          return res.status(500).json({ error: 'DB error' });
+        }
+        if (!row) {
+          return res.status(404).json({ error: 'Not found' });
+        }
+        db.run(
+          'DELETE FROM marker_images WHERE id = ?',
+          [imageId],
+          (err2) => {
+            if (err2) {
+              return res.status(500).json({ error: 'DB error' });
+            }
+            if (process.env.S3_BUCKET) {
+              const s3 = new AWS.S3();
+              const key = new URL(row.url).pathname.substring(1);
+              s3.deleteObject(
+                { Bucket: process.env.S3_BUCKET, Key: key },
+                (err3) => {
+                  if (err3) {
+                    console.error(err3);
+                  }
+                  res.sendStatus(204);
+                }
+              );
+            } else {
+              const filePath = path.join(
+                __dirname,
+                '..',
+                'uploads',
+                path.basename(row.url)
+              );
+              fs.unlink(filePath, () => {
+                res.sendStatus(204);
+              });
+            }
+          }
+        );
+      }
+    );
+  }
+);
 
 router.delete('/:id', authenticateToken, authorizeRoles('admin', 'editor'), (req, res) => {
   const id = req.params.id;
