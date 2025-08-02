@@ -1,10 +1,12 @@
 const express = require('express');
+const path = require('path');
 const authRouter = require('./auth');
 const { authenticateToken, authorizeRole } = require('./middleware/auth');
 const markersRouter = require('./markers');
 
 const app = express();
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/auth', authRouter);
 app.use('/markers', markersRouter);
 
