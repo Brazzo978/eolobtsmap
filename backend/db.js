@@ -31,6 +31,16 @@ db.serialize(() => {
     FOREIGN KEY(marker_id) REFERENCES markers(id) ON DELETE CASCADE
   )`);
 
+  db.run(`CREATE TABLE IF NOT EXISTS audit_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    action TEXT,
+    marker_id INTEGER,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    FOREIGN KEY(marker_id) REFERENCES markers(id)
+  )`);
+
   db.run(`CREATE INDEX IF NOT EXISTS idx_markers_lat_lng ON markers(lat, lng)`);
 });
 
