@@ -4,7 +4,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node -e \"console.log('No tests')\""
+    "test": "node -e \"console.log('No tests')\"",
+    "update-map": "node scripts/update-map.js"
   },
   "dependencies": {
     "aws-sdk": "^2.1692.0",

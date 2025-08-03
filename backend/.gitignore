@@ -1,2 +1,5 @@
 node_modules/
 data.sqlite
+
+map-data/*
+!map-data/.gitkeep
