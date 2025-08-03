@@ -13,3 +13,7 @@ Il database SQLite inizializza automaticamente le seguenti tabelle:
   `lat` e `lng` per facilitare le ricerche geospaziali.
 - **marker_images**: immagini associate ai marker con URL e didascalia,
   collegate tramite chiave esterna a `markers`.
+
+## Aggiornamento automatico della mappa OSM
+
+Lo script `npm run update-map` scarica l'estratto OpenStreetMap dell'Italia e lo salva nella cartella `map-data/`. Il processo verifica quotidianamente la disponibilità di nuove versioni e sostituisce automaticamente il file se necessario.
