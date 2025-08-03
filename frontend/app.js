@@ -38,8 +38,16 @@ let tileLayers = [];
 function setProviderLayers() {
   tileLayers.forEach((layer) => map.removeLayer(layer));
   tileLayers = tileProviders[provider].map((p) =>
-    L.tileLayer(p.url, p.options).addTo(map)
+    L.tileLayer(p.url, {
+      updateWhenIdle: false,
+      updateWhenZooming: true,
+      ...p.options,
+    }).addTo(map)
   );
+  // Ensure scroll zoom remains active after switching provider
+  map.scrollWheelZoom.enable();
+  // Force a refresh so overlay elements update immediately
+  map.invalidateSize();
 }
 
 setProviderLayers();
