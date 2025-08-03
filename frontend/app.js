@@ -2,7 +2,7 @@ const map = L.map('map').setView([0, 0], 2);
 
 // Allow choosing the map provider via query parameter ?map=google
 const params = new URLSearchParams(window.location.search);
-const provider = params.get('map') === 'google' ? 'google' : 'osm';
+let provider = params.get('map') === 'google' ? 'google' : 'osm';
 
 const tileProviders = {
   osm: {
@@ -22,7 +22,23 @@ const tileProviders = {
   },
 };
 
-L.tileLayer(tileProviders[provider].url, tileProviders[provider].options).addTo(map);
+let tileLayer = L.tileLayer(
+  tileProviders[provider].url,
+  tileProviders[provider].options
+).addTo(map);
+
+const mapSelect = document.getElementById('mapSelect');
+if (mapSelect) {
+  mapSelect.value = provider;
+  mapSelect.addEventListener('change', (e) => {
+    provider = e.target.value;
+    map.removeLayer(tileLayer);
+    tileLayer = L.tileLayer(
+      tileProviders[provider].url,
+      tileProviders[provider].options
+    ).addTo(map);
+  });
+}
 
 const markersById = {};
 const modal = document.getElementById('markerModal');

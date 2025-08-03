@@ -44,9 +44,25 @@
       display: block;
       margin-top: 0.5rem;
     }
+    #mapTypeControl {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1000;
+      background: #fff;
+      padding: 0.5rem;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
+  <div id="mapTypeControl">
+    <label for="mapSelect">Map:</label>
+    <select id="mapSelect">
+      <option value="osm">OpenStreetMap</option>
+      <option value="google">Google Maps</option>
+    </select>
+  </div>
   <div id="map"></div>
   <div id="markerModal" class="modal">
     <div class="modal-content">
