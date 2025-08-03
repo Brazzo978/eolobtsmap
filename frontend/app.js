@@ -69,6 +69,78 @@ if (mapToggle) {
   });
 }
 
+// Login modal handling
+const loginLink = document.getElementById('loginLink');
+const loginModal = document.getElementById('loginModal');
+const loginForm = document.getElementById('loginForm');
+if (loginLink && loginModal && loginForm) {
+  loginLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    loginModal.classList.add('show');
+  });
+  document.getElementById('cancelLogin').addEventListener('click', () => {
+    loginModal.classList.remove('show');
+  });
+  loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const username = document.getElementById('loginUser').value;
+    const password = document.getElementById('loginPass').value;
+    fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Login failed');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        localStorage.setItem('token', data.token);
+        loginModal.classList.remove('show');
+      })
+      .catch(() => alert('Login fallito'));
+  });
+}
+
+// Search functionality
+const searchBtn = document.getElementById('searchBtn');
+const searchInput = document.getElementById('searchInput');
+function handleSearch() {
+  const query = searchInput.value.trim();
+  if (!query) return;
+  const coordMatch = query.match(/^(-?\d+(?:\.\d+)?)[,\s]+(-?\d+(?:\.\d+)?)$/);
+  if (coordMatch) {
+    const lat = parseFloat(coordMatch[1]);
+    const lng = parseFloat(coordMatch[2]);
+    map.setView([lat, lng], 15);
+    L.marker([lat, lng]).addTo(map);
+  } else {
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+      .then((res) => res.json())
+      .then((results) => {
+        if (results && results.length) {
+          const lat = parseFloat(results[0].lat);
+          const lng = parseFloat(results[0].lon);
+          map.setView([lat, lng], 15);
+        } else {
+          alert('Nessun risultato trovato');
+        }
+      })
+      .catch(() => alert('Errore di ricerca'));
+  }
+}
+if (searchBtn && searchInput) {
+  searchBtn.addEventListener('click', handleSearch);
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearch();
+    }
+  });
+}
+
 const markersById = {};
 const modal = document.getElementById('markerModal');
 const form = document.getElementById('markerForm');
