@@ -1,5 +1,10 @@
 const map = L.map('map').setView([0, 0], 2);
 
+// Ensure the map resizes with the browser window
+window.addEventListener('resize', () => {
+  map.invalidateSize();
+});
+
 let provider = 'satellite';
 
 const tileProviders = {
