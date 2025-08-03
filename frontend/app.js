@@ -1,10 +1,28 @@
 const map = L.map('map').setView([0, 0], 2);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution:
-    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-}).addTo(map);
+// Allow choosing the map provider via query parameter ?map=google
+const params = new URLSearchParams(window.location.search);
+const provider = params.get('map') === 'google' ? 'google' : 'osm';
+
+const tileProviders = {
+  osm: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    options: {
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    },
+  },
+  google: {
+    url: 'https://{s}.google.com/vt?lyrs=m&x={x}&y={y}&z={z}',
+    options: {
+      maxZoom: 20,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+    },
+  },
+};
+
+L.tileLayer(tileProviders[provider].url, tileProviders[provider].options).addTo(map);
 
 const markersById = {};
 const modal = document.getElementById('markerModal');
