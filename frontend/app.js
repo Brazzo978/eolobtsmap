@@ -3,29 +3,46 @@ const map = L.map('map').setView([0, 0], 2);
 let provider = 'satellite';
 
 const tileProviders = {
-  standard: {
-    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-    options: {
-      maxZoom: 19,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  standard: [
+    {
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      options: {
+        maxZoom: 19,
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      },
     },
-  },
-  satellite: {
-    url:
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    options: {
-      maxZoom: 19,
-      attribution:
-        'Tiles © Esri — Source: Esri, Earthstar Geographics, NGA, USGS, GEBCO, DeLorme, NAVTEQ, and others',
+  ],
+  satellite: [
+    {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      options: {
+        maxZoom: 19,
+        attribution:
+          'Tiles © Esri — Source: Esri, Earthstar Geographics, NGA, USGS, GEBCO, DeLorme, NAVTEQ, and others',
+      },
     },
-  },
+    {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+      options: { maxZoom: 19 },
+    },
+    {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
+      options: { maxZoom: 19 },
+    },
+  ],
 };
 
-let tileLayer = L.tileLayer(
-  tileProviders[provider].url,
-  tileProviders[provider].options
-).addTo(map);
+let tileLayers = [];
+
+function setProviderLayers() {
+  tileLayers.forEach((layer) => map.removeLayer(layer));
+  tileLayers = tileProviders[provider].map((p) =>
+    L.tileLayer(p.url, p.options).addTo(map)
+  );
+}
+
+setProviderLayers();
 
 const mapToggle = document.getElementById('mapToggle');
 if (mapToggle) {
@@ -33,11 +50,7 @@ if (mapToggle) {
     provider === 'satellite' ? 'Mappa standard' : 'Vista satellite';
   mapToggle.addEventListener('click', () => {
     provider = provider === 'satellite' ? 'standard' : 'satellite';
-    map.removeLayer(tileLayer);
-    tileLayer = L.tileLayer(
-      tileProviders[provider].url,
-      tileProviders[provider].options
-    ).addTo(map);
+    setProviderLayers();
     mapToggle.textContent =
       provider === 'satellite' ? 'Mappa standard' : 'Vista satellite';
   });
