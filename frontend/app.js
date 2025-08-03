@@ -1,11 +1,9 @@
 const map = L.map('map').setView([0, 0], 2);
 
-// Allow choosing the map provider via query parameter ?map=google
-const params = new URLSearchParams(window.location.search);
-let provider = params.get('map') === 'google' ? 'google' : 'osm';
+let provider = 'satellite';
 
 const tileProviders = {
-  osm: {
+  standard: {
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     options: {
       maxZoom: 19,
@@ -13,11 +11,13 @@ const tileProviders = {
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     },
   },
-  google: {
-    url: 'https://{s}.google.com/vt?lyrs=m&x={x}&y={y}&z={z}',
+  satellite: {
+    url:
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     options: {
-      maxZoom: 20,
-      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      maxZoom: 19,
+      attribution:
+        'Tiles © Esri — Source: Esri, Earthstar Geographics, NGA, USGS, GEBCO, DeLorme, NAVTEQ, and others',
     },
   },
 };
@@ -27,16 +27,19 @@ let tileLayer = L.tileLayer(
   tileProviders[provider].options
 ).addTo(map);
 
-const mapSelect = document.getElementById('mapSelect');
-if (mapSelect) {
-  mapSelect.value = provider;
-  mapSelect.addEventListener('change', (e) => {
-    provider = e.target.value;
+const mapToggle = document.getElementById('mapToggle');
+if (mapToggle) {
+  mapToggle.textContent =
+    provider === 'satellite' ? 'Mappa standard' : 'Vista satellite';
+  mapToggle.addEventListener('click', () => {
+    provider = provider === 'satellite' ? 'standard' : 'satellite';
     map.removeLayer(tileLayer);
     tileLayer = L.tileLayer(
       tileProviders[provider].url,
       tileProviders[provider].options
     ).addTo(map);
+    mapToggle.textContent =
+      provider === 'satellite' ? 'Mappa standard' : 'Vista satellite';
   });
 }
 
