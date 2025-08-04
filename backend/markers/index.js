@@ -278,16 +278,22 @@ router.delete(
   authorizeRoles('admin', 'editor'),
   (req, res, next) => {
     const id = req.params.id;
-    db.run('DELETE FROM markers WHERE id = ?', [id], function (err) {
+    // Clear references from audit logs to avoid FK constraint errors
+    db.run('UPDATE audit_logs SET marker_id = NULL WHERE marker_id = ?', [id], (err) => {
       if (err) {
         return res.status(500).json({ error: 'DB error' });
       }
-      if (this.changes === 0) {
-        return res.status(404).json({ error: 'Not found' });
-      }
-      res.locals.markerId = id;
-      res.sendStatus(204);
-      next();
+      db.run('DELETE FROM markers WHERE id = ?', [id], function (err2) {
+        if (err2) {
+          return res.status(500).json({ error: 'DB error' });
+        }
+        if (this.changes === 0) {
+          return res.status(404).json({ error: 'Not found' });
+        }
+        res.locals.markerId = id;
+        res.sendStatus(204);
+        next();
+      });
     });
   },
   logMarkerAction('delete')
