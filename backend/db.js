@@ -28,8 +28,12 @@ db.serialize(() => {
     nome TEXT,
     descrizione TEXT,
     autore TEXT,
+    color TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
+  // Ensure legacy databases have the new columns
+  db.run('ALTER TABLE markers ADD COLUMN color TEXT', () => {});
 
   db.run(`CREATE TABLE IF NOT EXISTS marker_images (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

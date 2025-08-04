@@ -22,6 +22,8 @@ const logoutLink = document.getElementById('logoutLink');
 const adminLink = document.getElementById('adminLink');
 const loginModal = document.getElementById('loginModal');
 const loginForm = document.getElementById('loginForm');
+const markerViewModal = document.getElementById('viewMarkerModal');
+let currentUserRole = null;
 if (loginLink && loginModal && loginForm) {
   loginLink.addEventListener('click', (e) => {
     e.preventDefault();
@@ -76,6 +78,7 @@ function updateUI() {
     loginLink.style.display = 'none';
     logoutLink.style.display = 'inline';
     const payload = parseJwt(token);
+    currentUserRole = payload ? payload.role : null;
     if (payload && payload.role === 'admin') {
       adminLink.style.display = 'inline';
     } else {
@@ -85,6 +88,7 @@ function updateUI() {
     loginLink.style.display = 'inline';
     logoutLink.style.display = 'none';
     adminLink.style.display = 'none';
+    currentUserRole = null;
   }
 }
 updateUI();
@@ -194,6 +198,7 @@ form.addEventListener('submit', (e) => {
     descrizione: document.getElementById('markerDesc').value,
     lat: parseFloat(document.getElementById('markerLat').value),
     lng: parseFloat(document.getElementById('markerLng').value),
+    color: document.getElementById('markerColor').value || '#3388ff',
     images: [],
   };
   if (id) {
@@ -244,7 +249,7 @@ form.addEventListener('submit', (e) => {
           const existing = markersById[id];
           existing.data = marker;
           existing.marker.setLatLng([marker.lat, marker.lng]);
-          existing.marker.setPopupContent(createPopupContent(marker));
+          existing.marker.setIcon(createColoredIcon(marker.color));
         } else {
           addMarker(marker);
         }
@@ -256,10 +261,12 @@ form.addEventListener('submit', (e) => {
 
 function addMarker(marker) {
   if (!marker.images) marker.images = [];
-  const leafletMarker = L.marker([marker.lat, marker.lng], { draggable: true }).addTo(map);
-  leafletMarker.bindPopup(createPopupContent(marker));
-  leafletMarker.on('popupopen', () => {
-    attachPopupEvents(marker, leafletMarker);
+  const leafletMarker = L.marker([marker.lat, marker.lng], {
+    draggable: currentUserRole === 'admin' || currentUserRole === 'editor',
+    icon: createColoredIcon(marker.color || '#3388ff'),
+  }).addTo(map);
+  leafletMarker.on('click', () => {
+    openMarkerView(marker, leafletMarker);
   });
   leafletMarker.on('dragend', () => {
     const pos = leafletMarker.getLatLng();
@@ -270,63 +277,13 @@ function addMarker(marker) {
   markersById[marker.id] = { data: marker, marker: leafletMarker };
 }
 
-function attachPopupEvents(marker, leafletMarker) {
-  const popup = leafletMarker.getPopup().getElement();
-  popup.querySelector('.edit-marker').addEventListener('click', () => {
-    if (!localStorage.getItem('token')) {
-      loginModal.classList.add('show');
-      return;
-    }
-    openModal(marker);
-  });
-  popup.querySelector('.delete-marker').addEventListener('click', () => {
-    if (!localStorage.getItem('token')) {
-      loginModal.classList.add('show');
-      return;
-    }
-    if (confirm('Eliminare questo marker?')) {
-      fetch(`/markers/${marker.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: 'Bearer ' + localStorage.getItem('token') },
-      }).then((res) => {
-        if (res.ok) {
-          map.removeLayer(leafletMarker);
-          delete markersById[marker.id];
-        }
-      });
-    }
-  });
-  popup.querySelectorAll('.delete-image').forEach((btn) => {
-    const imageId = btn.dataset.imageId;
-    btn.addEventListener('click', () => {
-      if (!localStorage.getItem('token')) {
-        loginModal.classList.add('show');
-        return;
-      }
-      if (confirm('Eliminare questa immagine?')) {
-        fetch(`/markers/${marker.id}/images/${imageId}`, {
-          method: 'DELETE',
-          headers: { Authorization: 'Bearer ' + localStorage.getItem('token') },
-        }).then((res) => {
-            if (res.ok) {
-              marker.images = marker.images.filter(
-                (img) => String(img.id) !== String(imageId)
-              );
-              leafletMarker.setPopupContent(createPopupContent(marker));
-              leafletMarker.openPopup();
-            }
-        });
-      }
-    });
-  });
-}
-
 function openModal(marker) {
   document.getElementById('markerId').value = marker.id || '';
   document.getElementById('markerName').value = marker.nome || '';
   document.getElementById('markerDesc').value = marker.descrizione || '';
   document.getElementById('markerLat').value = marker.lat;
   document.getElementById('markerLng').value = marker.lng;
+  document.getElementById('markerColor').value = marker.color || '#3388ff';
   document.getElementById('markerImages').value = '';
   modal.classList.add('show');
 }
@@ -342,23 +299,96 @@ function saveMarker(marker) {
   }).catch((err) => console.error('Update failed', err));
 }
 
-function createPopupContent(marker) {
-  let html = '';
-  if (marker.nome) {
-    html += `<h3>${marker.nome}</h3>`;
-  }
-  if (marker.descrizione) {
-    html += `<p>${marker.descrizione}</p>`;
-  }
-  if (Array.isArray(marker.images) && marker.images.length) {
-    html += '<div class="popup-images">';
-    marker.images.forEach((img) => {
-      const caption = img.didascalia ? `alt="${img.didascalia}"` : '';
-      html += `<div><img src="${img.url}" ${caption}/><button class="delete-image" data-image-id="${img.id}">Elimina immagine</button></div>`;
-    });
-    html += '</div>';
-  }
-  html +=
-    '<button class="edit-marker">Modifica</button> <button class="delete-marker">Elimina</button>';
-  return html;
+function createColoredIcon(color) {
+  return L.divIcon({
+    className: 'custom-pin',
+    html: `<span style="background:${color}"></span>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
 }
+
+function openMarkerView(marker, leafletMarker) {
+  document.getElementById('viewTitle').textContent = marker.nome || 'Marker';
+  document.getElementById('viewDesc').textContent = marker.descrizione || '';
+  const carousel = document.getElementById('viewCarousel');
+  carousel.innerHTML = '';
+  if (marker.images && marker.images.length) {
+    marker.images.forEach((img) => {
+      const item = document.createElement('a');
+      item.className = 'carousel-item';
+      item.innerHTML = `<img src="${img.url}" alt="${img.didascalia || ''}">`;
+      if (currentUserRole === 'admin' || currentUserRole === 'editor') {
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Elimina immagine';
+        delBtn.className = 'btn red delete-image';
+        delBtn.dataset.imageId = img.id;
+        item.appendChild(delBtn);
+      }
+      carousel.appendChild(item);
+    });
+    M.Carousel.init(carousel);
+  }
+  const actions = document.getElementById('viewActions');
+  actions.innerHTML = '';
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = 'Chiudi';
+  closeBtn.className = 'btn';
+  closeBtn.addEventListener('click', () => markerViewModal.classList.remove('show'));
+  actions.appendChild(closeBtn);
+  if (currentUserRole === 'admin' || currentUserRole === 'editor') {
+    const editBtn = document.createElement('button');
+    editBtn.textContent = 'Modifica';
+    editBtn.className = 'btn';
+    editBtn.style.marginLeft = '0.5rem';
+    editBtn.addEventListener('click', () => {
+      markerViewModal.classList.remove('show');
+      openModal(marker);
+    });
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = 'Elimina pin';
+    deleteBtn.className = 'btn red';
+    deleteBtn.style.marginLeft = '0.5rem';
+    deleteBtn.addEventListener('click', () => {
+      if (confirm('Eliminare questo marker?')) {
+        fetch(`/markers/${marker.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + localStorage.getItem('token') },
+        }).then((res) => {
+          if (res.ok) {
+            map.removeLayer(leafletMarker);
+            delete markersById[marker.id];
+            markerViewModal.classList.remove('show');
+          }
+        });
+      }
+    });
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+  }
+  markerViewModal.classList.add('show');
+
+  carousel.querySelectorAll('.delete-image').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const imageId = btn.dataset.imageId;
+      if (confirm('Eliminare questa immagine?')) {
+        fetch(`/markers/${marker.id}/images/${imageId}`, {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + localStorage.getItem('token') },
+        }).then((res) => {
+          if (res.ok) {
+            marker.images = marker.images.filter((img) => String(img.id) !== String(imageId));
+            markerViewModal.classList.remove('show');
+            openMarkerView(marker, leafletMarker);
+          }
+        });
+      }
+    });
+  });
+}
+
+markerViewModal.addEventListener('click', (e) => {
+  if (e.target === markerViewModal) {
+    markerViewModal.classList.remove('show');
+  }
+});

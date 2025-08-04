@@ -12,7 +12,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
 
 function validateMarkerInput(req, res, next) {
-  const { lat, lng, descrizione, images } = req.body;
+  const { lat, lng, descrizione, images, color } = req.body;
   if (
     typeof lat !== 'number' ||
     typeof lng !== 'number' ||
@@ -36,6 +36,9 @@ function validateMarkerInput(req, res, next) {
       }
     }
   }
+  if (color && typeof color !== 'string') {
+    return res.status(400).json({ error: 'Invalid color' });
+  }
   next();
 }
 
@@ -56,6 +59,7 @@ router.get('/', (req, res) => {
           nome: row.nome,
           descrizione: row.descrizione,
           autore: row.autore,
+          color: row.color,
           timestamp: row.timestamp,
           images: [],
         };
@@ -91,6 +95,7 @@ router.get('/:id', (req, res) => {
       nome: rows[0].nome,
       descrizione: rows[0].descrizione,
       autore: rows[0].autore,
+      color: rows[0].color,
       timestamp: rows[0].timestamp,
       images: [],
     };
@@ -113,10 +118,10 @@ router.post(
   authorizeRoles('admin', 'editor'),
   validateMarkerInput,
   (req, res, next) => {
-    const { lat, lng, descrizione, images, nome, autore } = req.body;
+    const { lat, lng, descrizione, images, nome, autore, color } = req.body;
     db.run(
-      'INSERT INTO markers (lat, lng, descrizione, nome, autore) VALUES (?, ?, ?, ?, ?)',
-      [lat, lng, descrizione || null, nome || null, autore || null],
+      'INSERT INTO markers (lat, lng, descrizione, nome, autore, color) VALUES (?, ?, ?, ?, ?, ?)',
+      [lat, lng, descrizione || null, nome || null, autore || null, color || null],
       function (err) {
         if (err) {
           return res.status(500).json({ error: 'DB error' });
@@ -154,11 +159,11 @@ router.put(
   authorizeRoles('admin', 'editor'),
   validateMarkerInput,
   (req, res, next) => {
-    const { lat, lng, descrizione, images, nome, autore } = req.body;
+    const { lat, lng, descrizione, images, nome, autore, color } = req.body;
     const id = req.params.id;
     db.run(
-      'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ? WHERE id = ?',
-      [lat, lng, descrizione || null, nome || null, autore || null, id],
+      'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ?, color = ? WHERE id = ?',
+      [lat, lng, descrizione || null, nome || null, autore || null, color || null, id],
       function (err) {
         if (err) {
           return res.status(500).json({ error: 'DB error' });

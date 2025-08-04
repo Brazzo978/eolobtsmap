@@ -32,11 +32,6 @@
       z-index: 0;
       margin-top: 80px;
     }
-    .popup-images img {
-      max-width: 100%;
-      display: block;
-      margin-top: 4px;
-    }
     .modal {
       position: fixed;
       top: 0;
@@ -90,6 +85,17 @@
     nav .nav-wrapper ul {
       margin-left: auto;
     }
+    .custom-pin span {
+      display:block;
+      width:16px;
+      height:16px;
+      border:2px solid #fff;
+      border-radius:50%;
+    }
+    #viewCarousel .carousel-item img {
+      width:100%;
+      height:auto;
+    }
   </style>
 </head>
 <body>
@@ -136,12 +142,16 @@
           <input type="number" step="any" id="markerLng" />
         </label>
         <label>
+          Colore Pin:
+          <input type="color" id="markerColor" />
+        </label>
+        <label>
           Immagini:
           <input type="file" id="markerImages" accept="image/*" multiple />
         </label>
         <div style="margin-top:1rem;">
-          <button type="submit">Salva</button>
-          <button type="button" id="cancelModal">Annulla</button>
+          <button type="submit" class="btn">Salva</button>
+          <button type="button" id="cancelModal" class="btn grey lighten-1">Annulla</button>
         </div>
       </form>
     </div>
@@ -166,6 +176,14 @@
           <a href="#" id="forgotPass">Password dimenticata?</a>
         </div>
       </form>
+    </div>
+  </div>
+  <div id="viewMarkerModal" class="modal">
+    <div class="modal-content" style="max-width:600px;width:100%;height:90%;overflow:auto;">
+      <h4 id="viewTitle"></h4>
+      <p id="viewDesc"></p>
+      <div id="viewCarousel" class="carousel"></div>
+      <div id="viewActions" style="margin-top:1rem;"></div>
     </div>
   </div>
   <div id="resetModal" class="modal">
