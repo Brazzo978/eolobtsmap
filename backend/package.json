@@ -5,7 +5,8 @@
   "scripts": {
     "start": "node server.js",
     "test": "node -e \"console.log('No tests')\"",
-    "update-map": "node scripts/update-map.js"
+    "update-map": "node scripts/update-map.js",
+    "db": "node db-server.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
