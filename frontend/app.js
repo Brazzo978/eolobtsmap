@@ -11,6 +11,36 @@ L.control.layers({
   'Stradale (OSM)': standard
 }).addTo(map);
 
+// Context menu handling
+const mapContextMenu = document.getElementById('mapContextMenu');
+const insertMarkerBtn = document.getElementById('insertMarkerBtn');
+let savedLat, savedLng;
+
+map.on('contextmenu', (e) => {
+  e.originalEvent.preventDefault();
+  savedLat = e.latlng.lat;
+  savedLng = e.latlng.lng;
+  mapContextMenu.style.left = `${e.containerPoint.x}px`;
+  mapContextMenu.style.top = `${e.containerPoint.y}px`;
+  mapContextMenu.classList.add('show');
+});
+
+insertMarkerBtn.addEventListener('click', () => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    loginModal.classList.add('show');
+  } else {
+    openModal({ lat: savedLat, lng: savedLng, images: [] });
+  }
+  mapContextMenu.classList.remove('show');
+});
+
+document.addEventListener('click', (e) => {
+  if (mapContextMenu.classList.contains('show') && !mapContextMenu.contains(e.target)) {
+    mapContextMenu.classList.remove('show');
+  }
+});
+
 // Ensure the map resizes with the browser window
 window.addEventListener('resize', () => {
   map.invalidateSize();
@@ -178,6 +208,10 @@ fetch('/markers')
   });
 
 map.on('click', (e) => {
+  if (mapContextMenu.classList.contains('show')) {
+    mapContextMenu.classList.remove('show');
+    return;
+  }
   const token = localStorage.getItem('token');
   if (!token) {
     loginModal.classList.add('show');
