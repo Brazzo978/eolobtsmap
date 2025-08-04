@@ -17,6 +17,36 @@ const insertMarkerBtn = document.getElementById('insertMarkerBtn');
 let savedLat, savedLng;
 const tagFilter = document.getElementById('tagFilter');
 const markerTagSelect = document.getElementById('markerTag');
+const markerColorSelect = document.getElementById('markerColor');
+
+const COLOR_OPTIONS = [
+  '#3388ff',
+  '#e6194b',
+  '#3cb44b',
+  '#ffe119',
+  '#4363d8',
+  '#f58231',
+  '#911eb4',
+  '#46f0f0',
+  '#f032e6',
+  '#bcf60c',
+  '#fabebe',
+  '#008080',
+  '#e6beff',
+  '#9a6324',
+  '#fffac8',
+  '#800000'
+];
+
+if (markerColorSelect) {
+  COLOR_OPTIONS.forEach((color) => {
+    const opt = document.createElement('option');
+    opt.value = color;
+    opt.textContent = color;
+    opt.style.background = color;
+    markerColorSelect.appendChild(opt);
+  });
+}
 
 map.on('contextmenu', (e) => {
   e.originalEvent.preventDefault();
@@ -358,7 +388,15 @@ function openModal(marker) {
   document.getElementById('markerDesc').value = marker.descrizione || '';
   document.getElementById('markerLat').value = marker.lat;
   document.getElementById('markerLng').value = marker.lng;
-  document.getElementById('markerColor').value = marker.color || '#3388ff';
+  const colorSelect = document.getElementById('markerColor');
+  if (marker.color && colorSelect && !COLOR_OPTIONS.includes(marker.color)) {
+    const opt = document.createElement('option');
+    opt.value = marker.color;
+    opt.textContent = marker.color;
+    opt.style.background = marker.color;
+    colorSelect.appendChild(opt);
+  }
+  colorSelect.value = marker.color || COLOR_OPTIONS[0];
   document.getElementById('markerTag').value = marker.tag || '';
   document.getElementById('markerImages').value = '';
   modal.classList.add('show');
@@ -378,9 +416,9 @@ function saveMarker(marker) {
 function createColoredIcon(color) {
   return L.divIcon({
     className: 'custom-pin',
-    html: `<span style="background:${color}"></span>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    html: `<i class="material-icons" style="color:${color}">place</i>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
   });
 }
 
