@@ -65,15 +65,6 @@
       display: block;
       margin-top: 0.5rem;
     }
-    #mapTypeControl {
-      position: absolute;
-      top: 60px;
-      right: 10px;
-      z-index: 2001;
-      background: #fff;
-      padding: 0.5rem;
-      border-radius: 4px;
-    }
     /* Ensure Leaflet markers and popups appear above the tile layers */
     .leaflet-marker-pane,
     .leaflet-popup-pane {
@@ -88,9 +79,6 @@
     <input type="text" id="searchInput" placeholder="Cerca via o coordinata" />
     <button id="searchBtn">Cerca</button>
   </nav>
-  <div id="mapTypeControl">
-    <button id="mapToggle">Mappa standard</button>
-  </div>
   <div id="map"></div>
   <div id="markerModal" class="modal">
     <div class="modal-content">
@@ -145,6 +133,7 @@
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin="anonymous"
   ></script>
+  <script src="https://unpkg.com/esri-leaflet@3.0.16/dist/esri-leaflet.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
