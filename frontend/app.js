@@ -57,6 +57,20 @@ function setProviderLayers() {
 
 setProviderLayers();
 
+const menuButton = document.getElementById('menuButton');
+const menuDropdown = document.getElementById('menuDropdown');
+if (menuButton && menuDropdown) {
+  menuButton.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menuDropdown.classList.toggle('show');
+  });
+  document.addEventListener('click', (e) => {
+    if (!menuDropdown.contains(e.target)) {
+      menuDropdown.classList.remove('show');
+    }
+  });
+}
+
 const mapToggle = document.getElementById('mapToggle');
 if (mapToggle) {
   mapToggle.textContent =
@@ -66,6 +80,9 @@ if (mapToggle) {
     setProviderLayers();
     mapToggle.textContent =
       provider === 'satellite' ? 'Mappa standard' : 'Vista satellite';
+    if (menuDropdown) {
+      menuDropdown.classList.remove('show');
+    }
   });
 }
 
@@ -77,6 +94,9 @@ if (loginLink && loginModal && loginForm) {
   loginLink.addEventListener('click', (e) => {
     e.preventDefault();
     loginModal.classList.add('show');
+    if (menuDropdown) {
+      menuDropdown.classList.remove('show');
+    }
   });
   document.getElementById('cancelLogin').addEventListener('click', () => {
     loginModal.classList.remove('show');
