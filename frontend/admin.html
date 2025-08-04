@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin</title>
+</head>
+<body>
+  <h1>Gestione Utenti</h1>
+  <section>
+    <h2>Crea Utente</h2>
+    <form id="userForm">
+      <label>Username: <input type="text" id="newUsername" required /></label><br/>
+      <label>Email: <input type="email" id="newEmail" required /></label><br/>
+      <label>Password: <input type="password" id="newPassword" required /></label><br/>
+      <label>Ruolo:
+        <select id="newRole">
+          <option value="user">User</option>
+          <option value="editor">Editor</option>
+          <option value="admin">Admin</option>
+        </select>
+      </label><br/>
+      <button type="submit">Crea</button>
+    </form>
+  </section>
+  <section>
+    <h2>Utenti Esistenti</h2>
+    <table border="1" id="usersTable">
+      <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Ruolo</th><th>Azioni</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+<script>
+function tokenHeader() {
+  return { Authorization: 'Bearer ' + localStorage.getItem('token'), 'Content-Type':'application/json' };
+}
+function loadUsers() {
+  fetch('/users', { headers: tokenHeader() })
+    .then(r => r.json())
+    .then(users => {
+      const tbody = document.querySelector('#usersTable tbody');
+      tbody.innerHTML = '';
+      users.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${u.id}</td><td>${u.username}</td><td>${u.email}</td><td>${u.role}</td>`+
+          `<td><button data-id="${u.id}" class="deleteUser">Elimina</button></td>`;
+        tbody.appendChild(tr);
+      });
+      document.querySelectorAll('.deleteUser').forEach(btn => {
+        btn.addEventListener('click', () => {
+          fetch('/users/' + btn.dataset.id, { method: 'DELETE', headers: tokenHeader() })
+            .then(() => loadUsers());
+        });
+      });
+    });
+}
+
+document.getElementById('userForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const data = {
+    username: document.getElementById('newUsername').value,
+    email: document.getElementById('newEmail').value,
+    password: document.getElementById('newPassword').value,
+    role: document.getElementById('newRole').value
+  };
+  fetch('/users', { method: 'POST', headers: tokenHeader(), body: JSON.stringify(data) })
+    .then(r => {
+      if (r.ok) {
+        e.target.reset();
+        loadUsers();
+      } else {
+        alert('Errore creazione utente');
+      }
+    });
+});
+
+loadUsers();
+</script>
+</body>
+</html>
