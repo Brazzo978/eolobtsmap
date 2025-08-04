@@ -12,7 +12,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
 
 function validateMarkerInput(req, res, next) {
-  const { lat, lng, descrizione, images, color } = req.body;
+  const { lat, lng, descrizione, images, color, tag } = req.body;
   if (
     typeof lat !== 'number' ||
     typeof lng !== 'number' ||
@@ -39,13 +39,22 @@ function validateMarkerInput(req, res, next) {
   if (color && typeof color !== 'string') {
     return res.status(400).json({ error: 'Invalid color' });
   }
+  if (tag && typeof tag !== 'string') {
+    return res.status(400).json({ error: 'Invalid tag' });
+  }
   next();
 }
 
 router.get('/', (req, res) => {
-  const sql = `SELECT m.*, mi.id as image_id, mi.url, mi.didascalia
+  const tagFilter = req.query.tag;
+  let sql = `SELECT m.*, mi.id as image_id, mi.url, mi.didascalia
                FROM markers m LEFT JOIN marker_images mi ON m.id = mi.marker_id`;
-  db.all(sql, [], (err, rows) => {
+  const params = [];
+  if (tagFilter) {
+    sql += ' WHERE m.tag = ?';
+    params.push(tagFilter);
+  }
+  db.all(sql, params, (err, rows) => {
     if (err) {
       return res.status(500).json({ error: 'DB error' });
     }
@@ -60,6 +69,7 @@ router.get('/', (req, res) => {
           descrizione: row.descrizione,
           autore: row.autore,
           color: row.color,
+          tag: row.tag,
           timestamp: row.timestamp,
           images: [],
         };
@@ -96,6 +106,7 @@ router.get('/:id', (req, res) => {
       descrizione: rows[0].descrizione,
       autore: rows[0].autore,
       color: rows[0].color,
+      tag: rows[0].tag,
       timestamp: rows[0].timestamp,
       images: [],
     };
@@ -118,10 +129,10 @@ router.post(
   authorizeRoles('admin', 'editor'),
   validateMarkerInput,
   (req, res, next) => {
-    const { lat, lng, descrizione, images, nome, autore, color } = req.body;
+    const { lat, lng, descrizione, images, nome, autore, color, tag } = req.body;
     db.run(
-      'INSERT INTO markers (lat, lng, descrizione, nome, autore, color) VALUES (?, ?, ?, ?, ?, ?)',
-      [lat, lng, descrizione || null, nome || null, autore || null, color || null],
+      'INSERT INTO markers (lat, lng, descrizione, nome, autore, color, tag) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [lat, lng, descrizione || null, nome || null, autore || null, color || null, tag || null],
       function (err) {
         if (err) {
           return res.status(500).json({ error: 'DB error' });
@@ -159,11 +170,11 @@ router.put(
   authorizeRoles('admin', 'editor'),
   validateMarkerInput,
   (req, res, next) => {
-    const { lat, lng, descrizione, images, nome, autore, color } = req.body;
+    const { lat, lng, descrizione, images, nome, autore, color, tag } = req.body;
     const id = req.params.id;
     db.run(
-      'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ?, color = ? WHERE id = ?',
-      [lat, lng, descrizione || null, nome || null, autore || null, color || null, id],
+      'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ?, color = ?, tag = ? WHERE id = ?',
+      [lat, lng, descrizione || null, nome || null, autore || null, color || null, tag || null, id],
       function (err) {
         if (err) {
           return res.status(500).json({ error: 'DB error' });

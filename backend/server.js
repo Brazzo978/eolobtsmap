@@ -6,6 +6,7 @@ const markersRouter = require('./markers');
 const auditLogsRouter = require('./auditLogs');
 const usersRouter = require('./users');
 const config = require('./config');
+const tags = require('./tags');
 const db = require('./db');
 const bcrypt = require('bcrypt');
 
@@ -19,6 +20,9 @@ app.use('/auth', authRouter);
 app.use('/markers', markersRouter);
 app.use('/audit-logs', auditLogsRouter);
 app.use('/users', usersRouter);
+app.get('/tags', (req, res) => {
+  res.json(tags);
+});
 
 if (config.enableMapCache) {
   require('./scripts/update-map');

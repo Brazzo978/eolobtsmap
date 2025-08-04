@@ -33,11 +33,13 @@ db.serialize(() => {
     descrizione TEXT,
     autore TEXT,
     color TEXT,
+    tag TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
   // Ensure legacy databases have the new columns
   db.run('ALTER TABLE markers ADD COLUMN color TEXT', () => {});
+  db.run('ALTER TABLE markers ADD COLUMN tag TEXT', () => {});
 
   db.run(`CREATE TABLE IF NOT EXISTS marker_images (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

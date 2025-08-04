@@ -82,6 +82,10 @@
     nav .nav-wrapper .search-container button {
       margin-left: 10px;
     }
+    nav .nav-wrapper .search-container .tag-filter-field {
+      width: 180px;
+      margin-left: 10px;
+    }
     nav .nav-wrapper ul {
       margin-left: auto;
     }
@@ -131,6 +135,11 @@
             <label for="searchInput">Cerca via o coordinata</label>
           </div>
           <button id="searchBtn" class="btn waves-effect">Cerca</button>
+          <div class="tag-filter-field">
+            <select id="tagFilter">
+              <option value="">Tutti i tag</option>
+            </select>
+          </div>
         </div>
         <ul>
           <li><a href="#" id="loginLink">Login</a></li>
@@ -167,6 +176,12 @@
         <label>
           Colore Pin:
           <input type="color" id="markerColor" />
+        </label>
+        <label>
+          Tag:
+          <select id="markerTag">
+            <option value="">Seleziona un tag</option>
+          </select>
         </label>
         <label>
           Immagini:
