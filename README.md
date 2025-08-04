@@ -33,6 +33,7 @@ Applicazione web che consente agli utenti di segnalare la posizione di una BTS t
 
 - Per cambiare la porta del server è possibile usare la variabile d'ambiente `PORT`.
 - Se si dispone di un bucket S3, impostare le variabili `S3_BUCKET`, `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY` per salvare le immagini nel cloud; in caso contrario verranno salvate localmente nella cartella `backend/uploads`.
+- Impostare `ENABLE_MAP_CACHE=true` per abilitare il download periodico dell'estratto OSM dell'Italia; la funzione è disabilitata di default.
 
 ## Struttura del progetto
 

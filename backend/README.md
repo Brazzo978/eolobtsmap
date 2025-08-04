@@ -16,4 +16,4 @@ Il database SQLite inizializza automaticamente le seguenti tabelle:
 
 ## Aggiornamento automatico della mappa OSM
 
-Lo script `npm run update-map` scarica l'estratto OpenStreetMap dell'Italia e lo salva nella cartella `map-data/`. Il processo verifica quotidianamente la disponibilità di nuove versioni e sostituisce automaticamente il file se necessario.
+Per motivi di performance il caching dell'estratto OpenStreetMap è disattivato di default. È possibile attivarlo impostando la variabile d'ambiente `ENABLE_MAP_CACHE=true` prima di avviare il server: in tal caso lo script `scripts/update-map.js` scarica l'estratto dell'Italia nella cartella `map-data/` e ne verifica quotidianamente eventuali aggiornamenti.

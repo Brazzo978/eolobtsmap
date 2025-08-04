@@ -4,6 +4,7 @@ const authRouter = require('./auth');
 const { authenticateToken, authorizeRole } = require('./middleware/auth');
 const markersRouter = require('./markers');
 const auditLogsRouter = require('./auditLogs');
+const config = require('./config');
 
 const app = express();
 app.use(express.json());
@@ -14,6 +15,10 @@ app.use(express.static(frontendPath));
 app.use('/auth', authRouter);
 app.use('/markers', markersRouter);
 app.use('/audit-logs', auditLogsRouter);
+
+if (config.enableMapCache) {
+  require('./scripts/update-map');
+}
 
 // Return the frontend for the root path
 app.get('/', (req, res) => {
