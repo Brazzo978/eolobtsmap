@@ -11,7 +11,7 @@ const bcrypt = require('bcrypt');
 
 const app = express();
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(config.uploadsDir));
 // Serve the static frontend files
 const frontendPath = path.join(__dirname, '..', 'frontend');
 app.use(express.static(frontendPath));

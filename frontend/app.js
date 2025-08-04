@@ -219,19 +219,37 @@ form.addEventListener('submit', (e) => {
       return res.json().catch(() => ({}));
     })
     .then((data) => {
-      modal.classList.remove('show');
-      if (id) {
-        const existing = markersById[id];
-        existing.data.nome = marker.nome;
-        existing.data.descrizione = marker.descrizione;
-        existing.data.lat = marker.lat;
-        existing.data.lng = marker.lng;
-        existing.marker.setLatLng([marker.lat, marker.lng]);
-        existing.marker.setPopupContent(createPopupContent(existing.data));
-      } else {
-        marker.id = data.id;
-        addMarker(marker);
-      }
+      marker.id = id ? Number(id) : data.id;
+      const files = document.getElementById('markerImages').files;
+      const token = localStorage.getItem('token');
+      const uploads = Array.from(files).map((file) => {
+        const fd = new FormData();
+        fd.append('image', file);
+        return fetch(`/markers/${marker.id}/images`, {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + token },
+          body: fd,
+        })
+          .then((r) => {
+            if (!r.ok) throw new Error('Upload failed');
+            return r.json();
+          })
+          .then((imgData) => {
+            marker.images.push(imgData);
+          });
+      });
+      return Promise.all(uploads).then(() => {
+        document.getElementById('markerImages').value = '';
+        if (id) {
+          const existing = markersById[id];
+          existing.data = marker;
+          existing.marker.setLatLng([marker.lat, marker.lng]);
+          existing.marker.setPopupContent(createPopupContent(marker));
+        } else {
+          addMarker(marker);
+        }
+        modal.classList.remove('show');
+      });
     })
     .catch((err) => console.error(err));
 });
@@ -309,6 +327,7 @@ function openModal(marker) {
   document.getElementById('markerDesc').value = marker.descrizione || '';
   document.getElementById('markerLat').value = marker.lat;
   document.getElementById('markerLng').value = marker.lng;
+  document.getElementById('markerImages').value = '';
   modal.classList.add('show');
 }
 
