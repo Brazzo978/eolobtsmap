@@ -2,10 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
-let AWS;
-if (process.env.S3_BUCKET) {
-  AWS = require('aws-sdk');
-}
+const config = require('../config');
 const db = require('../db');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const { logMarkerAction } = require('../middleware/audit');
@@ -221,35 +218,15 @@ router.post(
         }
       );
     };
-    if (process.env.S3_BUCKET) {
-      const s3 = new AWS.S3();
-      const key = `${Date.now()}_${file.originalname}`;
-      s3.upload(
-        {
-          Bucket: process.env.S3_BUCKET,
-          Key: key,
-          Body: file.buffer,
-          ContentType: file.mimetype,
-          ACL: 'public-read',
-        },
-        (err, data) => {
-          if (err) {
-            return res.status(500).json({ error: 'Upload error' });
-          }
-          saveUrl(data.Location);
-        }
-      );
-    } else {
-      const uploadsDir = path.join(__dirname, '..', 'uploads');
-      fs.mkdirSync(uploadsDir, { recursive: true });
-      const filename = `${Date.now()}_${file.originalname}`;
-      fs.writeFile(path.join(uploadsDir, filename), file.buffer, (err) => {
-        if (err) {
-          return res.status(500).json({ error: 'Upload error' });
-        }
-        saveUrl(`/uploads/${filename}`);
-      });
-    }
+    const uploadsDir = config.uploadsDir;
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    const filename = `${Date.now()}_${file.originalname}`;
+    fs.writeFile(path.join(uploadsDir, filename), file.buffer, (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Upload error' });
+      }
+      saveUrl(`/uploads/${filename}`);
+    });
   }
 );
 
@@ -276,29 +253,13 @@ router.delete(
             if (err2) {
               return res.status(500).json({ error: 'DB error' });
             }
-            if (process.env.S3_BUCKET) {
-              const s3 = new AWS.S3();
-              const key = new URL(row.url).pathname.substring(1);
-              s3.deleteObject(
-                { Bucket: process.env.S3_BUCKET, Key: key },
-                (err3) => {
-                  if (err3) {
-                    console.error(err3);
-                  }
-                  res.sendStatus(204);
-                }
-              );
-            } else {
-              const filePath = path.join(
-                __dirname,
-                '..',
-                'uploads',
-                path.basename(row.url)
-              );
-              fs.unlink(filePath, () => {
-                res.sendStatus(204);
-              });
-            }
+            const filePath = path.join(
+              config.uploadsDir,
+              path.basename(row.url)
+            );
+            fs.unlink(filePath, () => {
+              res.sendStatus(204);
+            });
           }
         );
       }
