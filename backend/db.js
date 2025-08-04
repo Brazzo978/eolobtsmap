@@ -1,7 +1,11 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
+const config = require('./config');
 
-const db = new sqlite3.Database(path.join(__dirname, 'data.sqlite'));
+const dbPath = path.join(config.dbDir, 'data.sqlite');
+fs.mkdirSync(config.dbDir, { recursive: true });
+const db = new sqlite3.Database(dbPath);
 
 db.serialize(() => {
   db.run('PRAGMA foreign_keys = ON');

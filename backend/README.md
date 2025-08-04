@@ -17,3 +17,8 @@ Il database SQLite inizializza automaticamente le seguenti tabelle:
 ## Aggiornamento automatico della mappa OSM
 
 Per motivi di performance il caching dell'estratto OpenStreetMap è disattivato di default. È possibile attivarlo impostando la variabile d'ambiente `ENABLE_MAP_CACHE=true` prima di avviare il server: in tal caso lo script `scripts/update-map.js` scarica l'estratto dell'Italia nella cartella `map-data/` e ne verifica quotidianamente eventuali aggiornamenti.
+
+## Configurazione del database
+
+- Impostare la variabile d'ambiente `DB_DIR` per utilizzare una cartella esterna dove salvare il file `data.sqlite`.
+- È possibile avviare il database come processo separato con `npm run db` nella cartella `backend`.
