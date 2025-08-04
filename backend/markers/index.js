@@ -4,6 +4,7 @@ const path = require('path');
 const multer = require('multer');
 const config = require('../config');
 const db = require('../db');
+const { handleDbError } = require('../db-utils');
 const { authenticateToken, authorizeRoles } = require('../middleware/auth');
 const { logMarkerAction } = require('../middleware/audit');
 
@@ -45,10 +46,10 @@ function validateMarkerInput(req, res, next) {
 router.get('/', (req, res) => {
   const sql = `SELECT m.*, mi.id as image_id, mi.url, mi.didascalia
                FROM markers m LEFT JOIN marker_images mi ON m.id = mi.marker_id`;
-  db.all(sql, [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: 'DB error' });
-    }
+    db.all(sql, [], (err, rows) => {
+      if (err) {
+        return handleDbError(res, err);
+      }
     const markers = {};
     rows.forEach((row) => {
       if (!markers[row.id]) {
@@ -81,10 +82,10 @@ router.get('/:id', (req, res) => {
   const sql = `SELECT m.*, mi.id as image_id, mi.url, mi.didascalia
                FROM markers m LEFT JOIN marker_images mi ON m.id = mi.marker_id
                WHERE m.id = ?`;
-  db.all(sql, [id], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: 'DB error' });
-    }
+    db.all(sql, [id], (err, rows) => {
+      if (err) {
+        return handleDbError(res, err);
+      }
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Not found' });
     }
@@ -119,13 +120,13 @@ router.post(
   validateMarkerInput,
   (req, res, next) => {
     const { lat, lng, descrizione, images, nome, autore, color } = req.body;
-    db.run(
-      'INSERT INTO markers (lat, lng, descrizione, nome, autore, color) VALUES (?, ?, ?, ?, ?, ?)',
-      [lat, lng, descrizione || null, nome || null, autore || null, color || null],
-      function (err) {
-        if (err) {
-          return res.status(500).json({ error: 'DB error' });
-        }
+      db.run(
+        'INSERT INTO markers (lat, lng, descrizione, nome, autore, color) VALUES (?, ?, ?, ?, ?, ?)',
+        [lat, lng, descrizione || null, nome || null, autore || null, color || null],
+        function (err) {
+          if (err) {
+            return handleDbError(res, err);
+          }
         const markerId = this.lastID;
         if (images && images.length) {
           const stmt = db.prepare(
@@ -134,10 +135,10 @@ router.post(
           for (const img of images) {
             stmt.run(markerId, img.url, img.didascalia || null);
           }
-          stmt.finalize((err2) => {
-            if (err2) {
-              return res.status(500).json({ error: 'DB error' });
-            }
+            stmt.finalize((err2) => {
+              if (err2) {
+                return handleDbError(res, err2);
+              }
             res.locals.markerId = markerId;
             res.status(201).json({ id: markerId });
             next();
@@ -161,17 +162,17 @@ router.put(
   (req, res, next) => {
     const { lat, lng, descrizione, images, nome, autore, color } = req.body;
     const id = req.params.id;
-    db.run(
-      'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ?, color = ? WHERE id = ?',
-      [lat, lng, descrizione || null, nome || null, autore || null, color || null, id],
-      function (err) {
-        if (err) {
-          return res.status(500).json({ error: 'DB error' });
-        }
-        db.run('DELETE FROM marker_images WHERE marker_id = ?', [id], (err2) => {
-          if (err2) {
-            return res.status(500).json({ error: 'DB error' });
+      db.run(
+        'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ?, color = ? WHERE id = ?',
+        [lat, lng, descrizione || null, nome || null, autore || null, color || null, id],
+        function (err) {
+          if (err) {
+            return handleDbError(res, err);
           }
+          db.run('DELETE FROM marker_images WHERE marker_id = ?', [id], (err2) => {
+            if (err2) {
+              return handleDbError(res, err2);
+            }
           if (images && images.length) {
             const stmt = db.prepare(
               'INSERT INTO marker_images (marker_id, url, didascalia) VALUES (?, ?, ?)'
@@ -179,10 +180,10 @@ router.put(
             for (const img of images) {
               stmt.run(id, img.url, img.didascalia || null);
             }
-            stmt.finalize((err3) => {
-              if (err3) {
-                return res.status(500).json({ error: 'DB error' });
-              }
+              stmt.finalize((err3) => {
+                if (err3) {
+                  return handleDbError(res, err3);
+                }
               res.locals.markerId = id;
               res.json({ id });
               next();
@@ -212,26 +213,27 @@ router.post(
       return res.status(400).json({ error: 'Image file is required' });
     }
     const saveUrl = (url) => {
-      db.run(
-        'INSERT INTO marker_images (marker_id, url, didascalia) VALUES (?, ?, ?)',
-        [markerId, url, didascalia],
-        function (err) {
-          if (err) {
-            return res.status(500).json({ error: 'DB error' });
+        db.run(
+          'INSERT INTO marker_images (marker_id, url, didascalia) VALUES (?, ?, ?)',
+          [markerId, url, didascalia],
+          function (err) {
+            if (err) {
+              return handleDbError(res, err);
+            }
+            res.status(201).json({ id: this.lastID, url });
           }
-          res.status(201).json({ id: this.lastID, url });
-        }
-      );
+        );
     };
     const uploadsDir = config.uploadsDir;
     fs.mkdirSync(uploadsDir, { recursive: true });
     const filename = `${Date.now()}_${file.originalname}`;
-    fs.writeFile(path.join(uploadsDir, filename), file.buffer, (err) => {
-      if (err) {
-        return res.status(500).json({ error: 'Upload error' });
-      }
-      saveUrl(`/uploads/${filename}`);
-    });
+      fs.writeFile(path.join(uploadsDir, filename), file.buffer, (err) => {
+        if (err) {
+          console.error('Upload error', err);
+          return res.status(500).json({ error: 'Upload error' });
+        }
+        saveUrl(`/uploads/${filename}`);
+      });
   }
 );
 
@@ -241,23 +243,23 @@ router.delete(
   authorizeRoles('admin', 'editor'),
   (req, res) => {
     const { markerId, imageId } = req.params;
-    db.get(
-      'SELECT url FROM marker_images WHERE id = ? AND marker_id = ?',
-      [imageId, markerId],
-      (err, row) => {
-        if (err) {
-          return res.status(500).json({ error: 'DB error' });
-        }
+      db.get(
+        'SELECT url FROM marker_images WHERE id = ? AND marker_id = ?',
+        [imageId, markerId],
+        (err, row) => {
+          if (err) {
+            return handleDbError(res, err);
+          }
         if (!row) {
           return res.status(404).json({ error: 'Not found' });
         }
-        db.run(
-          'DELETE FROM marker_images WHERE id = ?',
-          [imageId],
-          (err2) => {
-            if (err2) {
-              return res.status(500).json({ error: 'DB error' });
-            }
+          db.run(
+            'DELETE FROM marker_images WHERE id = ?',
+            [imageId],
+            (err2) => {
+              if (err2) {
+                return handleDbError(res, err2);
+              }
             const filePath = path.join(
               config.uploadsDir,
               path.basename(row.url)
@@ -280,7 +282,7 @@ router.delete(
     const id = req.params.id;
     db.run('DELETE FROM markers WHERE id = ?', [id], function (err) {
       if (err) {
-        return res.status(500).json({ error: 'DB error' });
+        return handleDbError(res, err);
       }
       if (this.changes === 0) {
         return res.status(404).json({ error: 'Not found' });
