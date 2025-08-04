@@ -9,7 +9,7 @@ const map = L.map('map', { layers: [hybrid] }).setView([45.4642, 9.1900], 13);
 L.control.layers({
   'Hybrid (sat+etichette)': hybrid,
   'Stradale (OSM)': standard
-}).addTo(map);
+}, null, { position: 'bottomleft' }).addTo(map);
 
 // Context menu handling
 const mapContextMenu = document.getElementById('mapContextMenu');
