@@ -15,6 +15,8 @@ L.control.layers({
 const mapContextMenu = document.getElementById('mapContextMenu');
 const insertMarkerBtn = document.getElementById('insertMarkerBtn');
 let savedLat, savedLng;
+const tagFilter = document.getElementById('tagFilter');
+const markerTagSelect = document.getElementById('markerTag');
 
 map.on('contextmenu', (e) => {
   e.originalEvent.preventDefault();
@@ -84,6 +86,23 @@ if (loginLink && loginModal && loginForm) {
       })
       .catch(() => alert('Login fallito'));
   });
+}
+
+if (tagFilter && markerTagSelect) {
+  fetch('/tags')
+    .then((res) => res.json())
+    .then((tags) => {
+      tags.forEach((t) => {
+        const optFilter = document.createElement('option');
+        optFilter.value = t;
+        optFilter.textContent = t;
+        tagFilter.appendChild(optFilter);
+        const optMarker = document.createElement('option');
+        optMarker.value = t;
+        optMarker.textContent = t;
+        markerTagSelect.appendChild(optMarker);
+      });
+    });
 }
 
 if (logoutLink) {
@@ -191,6 +210,24 @@ const markersById = {};
 const modal = document.getElementById('markerModal');
 const form = document.getElementById('markerForm');
 
+function applyTagFilter() {
+  const selected = tagFilter ? tagFilter.value : '';
+  Object.values(markersById).forEach(({ data, marker }) => {
+    if (!selected || data.tag === selected) {
+      if (!map.hasLayer(marker)) {
+        marker.addTo(map);
+      }
+    } else {
+      if (map.hasLayer(marker)) {
+        map.removeLayer(marker);
+      }
+    }
+  });
+}
+if (tagFilter) {
+  tagFilter.addEventListener('change', applyTagFilter);
+}
+
 fetch('/markers')
   .then((response) => {
     if (!response.ok) {
@@ -202,6 +239,7 @@ fetch('/markers')
     markers.forEach((marker) => {
       addMarker(marker);
     });
+    applyTagFilter();
   })
   .catch((err) => {
     console.error('Failed to load markers', err);
@@ -233,6 +271,7 @@ form.addEventListener('submit', (e) => {
     lat: parseFloat(document.getElementById('markerLat').value),
     lng: parseFloat(document.getElementById('markerLng').value),
     color: document.getElementById('markerColor').value || '#3388ff',
+    tag: document.getElementById('markerTag').value || null,
     images: [],
   };
   if (id) {
@@ -287,6 +326,7 @@ form.addEventListener('submit', (e) => {
         } else {
           addMarker(marker);
         }
+        applyTagFilter();
         modal.classList.remove('show');
       });
     })
@@ -309,6 +349,7 @@ function addMarker(marker) {
     saveMarker(marker);
   });
   markersById[marker.id] = { data: marker, marker: leafletMarker };
+  applyTagFilter();
 }
 
 function openModal(marker) {
@@ -318,6 +359,7 @@ function openModal(marker) {
   document.getElementById('markerLat').value = marker.lat;
   document.getElementById('markerLng').value = marker.lng;
   document.getElementById('markerColor').value = marker.color || '#3388ff';
+  document.getElementById('markerTag').value = marker.tag || '';
   document.getElementById('markerImages').value = '';
   modal.classList.add('show');
 }
