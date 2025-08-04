@@ -10,30 +10,27 @@
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin="anonymous"
   />
+  <!-- Materialize CSS & Icons -->
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+    rel="stylesheet"
+  />
+  <link
+    href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    rel="stylesheet"
+  />
   <style>
     html, body {
       height: 100%;
       margin: 0;
       overflow: hidden;
     }
-    #topMenu {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: #fff;
-      z-index: 2002;
-      padding: 0.5rem;
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-    }
     #map {
-      height: calc(100% - 50px);
+      height: calc(100% - 160px);
       width: 100%;
       position: relative;
       z-index: 0;
-      margin-top: 50px;
+      margin-top: 160px;
     }
     .popup-images img {
       max-width: 100%;
@@ -73,14 +70,30 @@
   </style>
 </head>
 <body>
-  <nav id="topMenu">
-    <a href="#" id="loginLink">Login</a>
-    <a href="#" id="logoutLink" style="display:none">Logout</a>
-    <a href="admin.html" id="adminLink" style="display:none">Admin</a>
-    <a href="about.html">What About Us</a>
-    <input type="text" id="searchInput" placeholder="Cerca via o coordinata" />
-    <button id="searchBtn">Cerca</button>
-  </nav>
+  <div class="navbar-fixed">
+    <nav class="teal lighten-2">
+      <div class="nav-wrapper container">
+        <a href="#" class="brand-logo">Eolobtsmap</a>
+        <ul class="right">
+          <li><a href="#" id="loginLink">Login</a></li>
+          <li><a href="#" id="logoutLink" style="display:none">Logout</a></li>
+          <li><a href="admin.html" id="adminLink" style="display:none">Admin</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </div>
+      <div class="nav-content teal lighten-3">
+        <div class="container row" style="margin-bottom: 0;">
+          <div class="input-field col s9 m10">
+            <input id="searchInput" type="text" />
+            <label for="searchInput">Cerca via o coordinata</label>
+          </div>
+          <div class="col s3 m2" style="margin-top: 20px;">
+            <button id="searchBtn" class="btn waves-effect">Cerca</button>
+          </div>
+        </div>
+      </div>
+    </nav>
+  </div>
   <div id="map"></div>
   <div id="markerModal" class="modal">
     <div class="modal-content">
@@ -153,6 +166,7 @@
     crossorigin="anonymous"
   ></script>
   <script src="https://unpkg.com/esri-leaflet@3.0.16/dist/esri-leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

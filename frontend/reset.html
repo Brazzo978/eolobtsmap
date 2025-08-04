@@ -4,13 +4,35 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Reset Password</title>
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+    rel="stylesheet"
+  />
+  <link
+    href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    rel="stylesheet"
+  />
 </head>
 <body>
-  <h1>Reset Password</h1>
-  <form id="resetPasswordForm">
-    <label>Nuova Password: <input type="password" id="newPass" required /></label>
-    <button type="submit">Reset</button>
-  </form>
+  <div class="navbar-fixed">
+    <nav class="teal lighten-2">
+      <div class="nav-wrapper container">
+        <a href="index.html" class="brand-logo">Eolobtsmap</a>
+      </div>
+    </nav>
+  </div>
+  <div class="container" style="margin-top:2rem;">
+    <h3>Reset Password</h3>
+    <form id="resetPasswordForm" class="row">
+      <div class="input-field col s12 m6">
+        <input type="password" id="newPass" required />
+        <label for="newPass">Nuova Password</label>
+      </div>
+      <div class="col s12">
+        <button type="submit" class="btn waves-effect">Reset</button>
+      </div>
+    </form>
+  </div>
 <script>
 const params = new URLSearchParams(window.location.search);
 const token = params.get('token');
@@ -34,5 +56,6 @@ document.getElementById('resetPasswordForm').addEventListener('submit', e => {
   });
 });
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </body>
 </html>
