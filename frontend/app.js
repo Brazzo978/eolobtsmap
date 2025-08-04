@@ -11,6 +11,9 @@ L.control.layers({
   'Stradale (OSM)': standard
 }, null, { position: 'bottomleft' }).addTo(map);
 
+const markerClusters = L.markerClusterGroup();
+map.addLayer(markerClusters);
+
 // Context menu handling
 const mapContextMenu = document.getElementById('mapContextMenu');
 const insertMarkerBtn = document.getElementById('insertMarkerBtn');
@@ -256,13 +259,11 @@ function applyTagFilter() {
   const selected = tagFilter ? tagFilter.value : '';
   Object.values(markersById).forEach(({ data, marker }) => {
     if (!selected || data.tag === selected) {
-      if (!map.hasLayer(marker)) {
-        marker.addTo(map);
+      if (!markerClusters.hasLayer(marker)) {
+        markerClusters.addLayer(marker);
       }
-    } else {
-      if (map.hasLayer(marker)) {
-        map.removeLayer(marker);
-      }
+    } else if (markerClusters.hasLayer(marker)) {
+      markerClusters.removeLayer(marker);
     }
   });
 }
@@ -358,6 +359,7 @@ form.addEventListener('submit', (e) => {
           existing.data = marker;
           existing.marker.setLatLng([marker.lat, marker.lng]);
           existing.marker.setIcon(createColoredIcon(marker.color));
+          markerClusters.refreshClusters(existing.marker);
         } else {
           addMarker(marker);
         }
@@ -373,7 +375,8 @@ function addMarker(marker) {
   const leafletMarker = L.marker([marker.lat, marker.lng], {
     draggable: currentUserRole === 'admin' || currentUserRole === 'editor',
     icon: createColoredIcon(marker.color || '#3388ff'),
-  }).addTo(map);
+  });
+  markerClusters.addLayer(leafletMarker);
   leafletMarker.on('click', () => {
     openMarkerView(marker, leafletMarker);
   });
@@ -480,7 +483,7 @@ function openMarkerView(marker, leafletMarker) {
           headers: { Authorization: 'Bearer ' + localStorage.getItem('token') },
         }).then((res) => {
           if (res.ok) {
-            map.removeLayer(leafletMarker);
+            markerClusters.removeLayer(leafletMarker);
             delete markersById[marker.id];
             markerViewModal.classList.remove('show');
           }
