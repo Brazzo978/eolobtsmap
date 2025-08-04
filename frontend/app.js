@@ -1,73 +1,20 @@
-const map = L.map('map').setView([0, 0], 2);
+const imagery = L.esri.basemapLayer('Imagery');
+const labels = L.esri.basemapLayer('ImageryLabels');
+const hybrid = L.layerGroup([imagery, labels]);
+const standard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap',
+  maxZoom: 19
+});
+const map = L.map('map', { layers: [hybrid] }).setView([45.4642, 9.1900], 13);
+L.control.layers({
+  'Hybrid (sat+etichette)': hybrid,
+  'Stradale (OSM)': standard
+}).addTo(map);
 
 // Ensure the map resizes with the browser window
 window.addEventListener('resize', () => {
   map.invalidateSize();
 });
-
-let provider = 'satellite';
-
-const tileProviders = {
-  standard: [
-    {
-      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-      options: {
-        maxZoom: 19,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      },
-    },
-  ],
-  satellite: [
-    {
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      options: {
-        maxZoom: 19,
-        attribution:
-          'Tiles © Esri — Source: Esri, Earthstar Geographics, NGA, USGS, GEBCO, DeLorme, NAVTEQ, and others',
-      },
-    },
-    {
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
-      options: { maxZoom: 19 },
-    },
-    {
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}',
-      options: { maxZoom: 19 },
-    },
-  ],
-};
-
-let tileLayers = [];
-
-function setProviderLayers() {
-  tileLayers.forEach((layer) => map.removeLayer(layer));
-  tileLayers = tileProviders[provider].map((p) =>
-    L.tileLayer(p.url, {
-      updateWhenIdle: false,
-      updateWhenZooming: true,
-      ...p.options,
-    }).addTo(map)
-  );
-  // Ensure scroll zoom remains active after switching provider
-  map.scrollWheelZoom.enable();
-  // Force a refresh so overlay elements update immediately
-  map.invalidateSize();
-}
-
-setProviderLayers();
-
-const mapToggle = document.getElementById('mapToggle');
-if (mapToggle) {
-  mapToggle.textContent =
-    provider === 'satellite' ? 'Mappa standard' : 'Vista satellite';
-  mapToggle.addEventListener('click', () => {
-    provider = provider === 'satellite' ? 'standard' : 'satellite';
-    setProviderLayers();
-    mapToggle.textContent =
-      provider === 'satellite' ? 'Mappa standard' : 'Vista satellite';
-  });
-}
 
 // Login modal handling
 const loginLink = document.getElementById('loginLink');
