@@ -46,6 +46,14 @@ if (markerColorSelect) {
     opt.style.background = color;
     markerColorSelect.appendChild(opt);
   });
+  if (window.M && M.FormSelect) {
+    M.FormSelect.init(markerColorSelect);
+  }
+}
+
+if (window.M && M.FormSelect) {
+  if (tagFilter) M.FormSelect.init(tagFilter);
+  if (markerTagSelect) M.FormSelect.init(markerTagSelect);
 }
 
 map.on('contextmenu', (e) => {
@@ -132,6 +140,10 @@ if (tagFilter && markerTagSelect) {
         optMarker.textContent = t;
         markerTagSelect.appendChild(optMarker);
       });
+      if (window.M && M.FormSelect) {
+        M.FormSelect.init(tagFilter);
+        M.FormSelect.init(markerTagSelect);
+      }
     });
 }
 
@@ -390,7 +402,12 @@ function openModal(marker) {
     colorSelect.appendChild(opt);
   }
   colorSelect.value = marker.color || COLOR_OPTIONS[0];
-  document.getElementById('markerTag').value = marker.tag || '';
+  const tagSelect = document.getElementById('markerTag');
+  tagSelect.value = marker.tag || '';
+  if (window.M && M.FormSelect) {
+    M.FormSelect.init(colorSelect);
+    M.FormSelect.init(tagSelect);
+  }
   document.getElementById('markerImages').value = '';
   modal.classList.add('show');
 }
