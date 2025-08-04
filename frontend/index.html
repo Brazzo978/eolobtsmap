@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Eolobtsmap</title>
+  <title>BTSMAP</title>
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -26,11 +26,11 @@
       overflow: hidden;
     }
     #map {
-      height: calc(100% - 160px);
+      height: calc(100% - 80px);
       width: 100%;
       position: relative;
       z-index: 0;
-      margin-top: 160px;
+      margin-top: 80px;
     }
     .popup-images img {
       max-width: 100%;
@@ -67,30 +67,49 @@
     .leaflet-popup-pane {
       z-index: 2001;
     }
+    nav .nav-wrapper {
+      display: flex;
+      align-items: center;
+    }
+    nav .nav-wrapper .brand-logo {
+      position: static;
+    }
+    nav .nav-wrapper .search-container {
+      flex: 1;
+      margin-left: 20px;
+      display: flex;
+      align-items: center;
+    }
+    nav .nav-wrapper .search-container .input-field {
+      flex: 1;
+      margin: 0;
+    }
+    nav .nav-wrapper .search-container button {
+      margin-left: 10px;
+    }
+    nav .nav-wrapper ul {
+      margin-left: auto;
+    }
   </style>
 </head>
 <body>
   <div class="navbar-fixed">
     <nav class="teal lighten-2">
       <div class="nav-wrapper container">
-        <a href="#" class="brand-logo">Eolobtsmap</a>
-        <ul class="right">
+        <a href="#" class="brand-logo">BTSMAP</a>
+        <div class="search-container">
+          <div class="input-field">
+            <input id="searchInput" type="text" />
+            <label for="searchInput">Cerca via o coordinata</label>
+          </div>
+          <button id="searchBtn" class="btn waves-effect">Cerca</button>
+        </div>
+        <ul>
           <li><a href="#" id="loginLink">Login</a></li>
           <li><a href="#" id="logoutLink" style="display:none">Logout</a></li>
           <li><a href="admin.html" id="adminLink" style="display:none">Admin</a></li>
           <li><a href="about.html">About</a></li>
         </ul>
-      </div>
-      <div class="nav-content teal lighten-3">
-        <div class="container row" style="margin-bottom: 0;">
-          <div class="input-field col s9 m10">
-            <input id="searchInput" type="text" />
-            <label for="searchInput">Cerca via o coordinata</label>
-          </div>
-          <div class="col s3 m2" style="margin-top: 20px;">
-            <button id="searchBtn" class="btn waves-effect">Cerca</button>
-          </div>
-        </div>
       </div>
     </nav>
   </div>
