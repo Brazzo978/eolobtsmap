@@ -245,17 +245,10 @@ fetch('/markers')
     console.error('Failed to load markers', err);
   });
 
-map.on('click', (e) => {
+map.on('click', () => {
   if (mapContextMenu.classList.contains('show')) {
     mapContextMenu.classList.remove('show');
-    return;
   }
-  const token = localStorage.getItem('token');
-  if (!token) {
-    loginModal.classList.add('show');
-    return;
-  }
-  openModal({ lat: e.latlng.lat, lng: e.latlng.lng, images: [] });
 });
 
 document.getElementById('cancelModal').addEventListener('click', () => {
