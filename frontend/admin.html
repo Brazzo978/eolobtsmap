@@ -4,32 +4,64 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admin</title>
+  <link
+    href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+    rel="stylesheet"
+  />
+  <link
+    href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    rel="stylesheet"
+  />
 </head>
 <body>
-  <h1>Gestione Utenti</h1>
-  <section>
-    <h2>Crea Utente</h2>
-    <form id="userForm">
-      <label>Username: <input type="text" id="newUsername" required /></label><br/>
-      <label>Email: <input type="email" id="newEmail" required /></label><br/>
-      <label>Password: <input type="password" id="newPassword" required /></label><br/>
-      <label>Ruolo:
-        <select id="newRole">
-          <option value="user">User</option>
-          <option value="editor">Editor</option>
-          <option value="admin">Admin</option>
-        </select>
-      </label><br/>
-      <button type="submit">Crea</button>
-    </form>
-  </section>
-  <section>
-    <h2>Utenti Esistenti</h2>
-    <table border="1" id="usersTable">
-      <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Ruolo</th><th>Azioni</th></tr></thead>
-      <tbody></tbody>
-    </table>
-  </section>
+  <div class="navbar-fixed">
+    <nav class="teal lighten-2">
+      <div class="nav-wrapper container">
+        <a href="index.html" class="brand-logo">Eolobtsmap</a>
+        <ul class="right">
+          <li><a href="index.html">Mappa</a></li>
+        </ul>
+      </div>
+    </nav>
+  </div>
+  <div class="container" style="margin-top: 2rem;">
+    <h3>Gestione Utenti</h3>
+    <section>
+      <h5>Crea Utente</h5>
+      <form id="userForm" class="row">
+        <div class="input-field col s12 m6">
+          <input type="text" id="newUsername" required />
+          <label for="newUsername">Username</label>
+        </div>
+        <div class="input-field col s12 m6">
+          <input type="email" id="newEmail" required />
+          <label for="newEmail">Email</label>
+        </div>
+        <div class="input-field col s12 m6">
+          <input type="password" id="newPassword" required />
+          <label for="newPassword">Password</label>
+        </div>
+        <div class="input-field col s12 m6">
+          <select id="newRole">
+            <option value="user">User</option>
+            <option value="editor">Editor</option>
+            <option value="admin">Admin</option>
+          </select>
+          <label for="newRole">Ruolo</label>
+        </div>
+        <div class="col s12" style="margin-top:1rem;">
+          <button type="submit" class="btn waves-effect">Crea</button>
+        </div>
+      </form>
+    </section>
+    <section>
+      <h5>Utenti Esistenti</h5>
+      <table class="striped" id="usersTable">
+        <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Ruolo</th><th>Azioni</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
 <script>
 function tokenHeader() {
   return { Authorization: 'Bearer ' + localStorage.getItem('token'), 'Content-Type':'application/json' };
@@ -75,6 +107,13 @@ document.getElementById('userForm').addEventListener('submit', e => {
 });
 
 loadUsers();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var selects = document.querySelectorAll('select');
+    M.FormSelect.init(selects);
+  });
 </script>
 </body>
 </html>
