@@ -96,6 +96,28 @@
       width:100%;
       height:auto;
     }
+    #mapContextMenu {
+      position: absolute;
+      z-index: 2000;
+      background: #fff;
+      border: 1px solid #ccc;
+      display: none;
+    }
+    #mapContextMenu.show {
+      display: block;
+    }
+    #mapContextMenu button {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+    }
+    #mapContextMenu button:hover {
+      background: #eee;
+    }
   </style>
 </head>
 <body>
@@ -120,6 +142,7 @@
     </nav>
   </div>
   <div id="map"></div>
+  <div id="mapContextMenu"><button id="insertMarkerBtn">Inserisci marker</button></div>
   <div id="markerModal" class="modal">
     <div class="modal-content">
       <h2 id="modalTitle">Marker</h2>
