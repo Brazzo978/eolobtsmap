@@ -75,6 +75,8 @@
 <body>
   <nav id="topMenu">
     <a href="#" id="loginLink">Login</a>
+    <a href="#" id="logoutLink" style="display:none">Logout</a>
+    <a href="admin.html" id="adminLink" style="display:none">Admin</a>
     <a href="about.html">What About Us</a>
     <input type="text" id="searchInput" placeholder="Cerca via o coordinata" />
     <button id="searchBtn">Cerca</button>
@@ -123,6 +125,23 @@
         <div style="margin-top:1rem;">
           <button type="submit">Accedi</button>
           <button type="button" id="cancelLogin">Annulla</button>
+        </div>
+        <div style="margin-top:0.5rem;">
+          <a href="#" id="forgotPass">Password dimenticata?</a>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div id="resetModal" class="modal">
+    <div class="modal-content">
+      <h2>Reset Password</h2>
+      <form id="resetForm">
+        <label>Email:
+          <input type="email" id="resetEmail" required />
+        </label>
+        <div style="margin-top:1rem;">
+          <button type="submit">Invia</button>
+          <button type="button" id="cancelReset">Annulla</button>
         </div>
       </form>
     </div>

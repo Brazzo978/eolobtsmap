@@ -9,9 +9,17 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
+    email TEXT UNIQUE,
     password_hash TEXT,
-    role TEXT
+    role TEXT,
+    reset_token TEXT,
+    reset_expires INTEGER
   )`);
+
+  // Ensure legacy databases have the new columns
+  db.run('ALTER TABLE users ADD COLUMN email TEXT UNIQUE', () => {});
+  db.run('ALTER TABLE users ADD COLUMN reset_token TEXT', () => {});
+  db.run('ALTER TABLE users ADD COLUMN reset_expires INTEGER', () => {});
 
   db.run(`CREATE TABLE IF NOT EXISTS markers (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
