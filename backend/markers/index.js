@@ -12,7 +12,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
 
 function validateMarkerInput(req, res, next) {
-  const { lat, lng, descrizione, images, color, tag } = req.body;
+  const { lat, lng, descrizione, images, color, tags } = req.body;
   if (
     typeof lat !== 'number' ||
     typeof lng !== 'number' ||
@@ -39,8 +39,15 @@ function validateMarkerInput(req, res, next) {
   if (color && typeof color !== 'string') {
     return res.status(400).json({ error: 'Invalid color' });
   }
-  if (tag && typeof tag !== 'string') {
-    return res.status(400).json({ error: 'Invalid tag' });
+  if (tags) {
+    if (!Array.isArray(tags)) {
+      return res.status(400).json({ error: 'Invalid tags' });
+    }
+    for (const t of tags) {
+      if (typeof t !== 'string') {
+        return res.status(400).json({ error: 'Invalid tags' });
+      }
+    }
   }
   next();
 }
@@ -51,8 +58,8 @@ router.get('/', (req, res) => {
                FROM markers m LEFT JOIN marker_images mi ON m.id = mi.marker_id`;
   const params = [];
   if (tagFilter) {
-    sql += ' WHERE m.tag = ?';
-    params.push(tagFilter);
+    sql += ' WHERE m.tag LIKE ?';
+    params.push(`%${tagFilter}%`);
   }
   db.all(sql, params, (err, rows) => {
     if (err) {
@@ -61,6 +68,15 @@ router.get('/', (req, res) => {
     const markers = {};
     rows.forEach((row) => {
       if (!markers[row.id]) {
+        let parsedTags = [];
+        if (row.tag) {
+          try {
+            const t = JSON.parse(row.tag);
+            parsedTags = Array.isArray(t) ? t : [row.tag];
+          } catch {
+            parsedTags = [row.tag];
+          }
+        }
         markers[row.id] = {
           id: row.id,
           lat: row.lat,
@@ -69,7 +85,7 @@ router.get('/', (req, res) => {
           descrizione: row.descrizione,
           autore: row.autore,
           color: row.color,
-          tag: row.tag,
+          tags: parsedTags,
           timestamp: row.timestamp,
           images: [],
         };
@@ -98,6 +114,15 @@ router.get('/:id', (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Not found' });
     }
+    let parsedTags = [];
+    if (rows[0].tag) {
+      try {
+        const t = JSON.parse(rows[0].tag);
+        parsedTags = Array.isArray(t) ? t : [rows[0].tag];
+      } catch {
+        parsedTags = [rows[0].tag];
+      }
+    }
     const marker = {
       id: rows[0].id,
       lat: rows[0].lat,
@@ -106,7 +131,7 @@ router.get('/:id', (req, res) => {
       descrizione: rows[0].descrizione,
       autore: rows[0].autore,
       color: rows[0].color,
-      tag: rows[0].tag,
+      tags: parsedTags,
       timestamp: rows[0].timestamp,
       images: [],
     };
@@ -129,10 +154,18 @@ router.post(
   authorizeRoles('admin', 'editor'),
   validateMarkerInput,
   (req, res, next) => {
-    const { lat, lng, descrizione, images, nome, autore, color, tag } = req.body;
+    const { lat, lng, descrizione, images, nome, autore, color, tags } = req.body;
     db.run(
       'INSERT INTO markers (lat, lng, descrizione, nome, autore, color, tag) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [lat, lng, descrizione || null, nome || null, autore || null, color || null, tag || null],
+      [
+        lat,
+        lng,
+        descrizione || null,
+        nome || null,
+        autore || null,
+        color || null,
+        tags ? JSON.stringify(tags) : null,
+      ],
       function (err) {
         if (err) {
           return res.status(500).json({ error: 'DB error' });
@@ -170,11 +203,20 @@ router.put(
   authorizeRoles('admin', 'editor'),
   validateMarkerInput,
   (req, res, next) => {
-    const { lat, lng, descrizione, images, nome, autore, color, tag } = req.body;
+    const { lat, lng, descrizione, images, nome, autore, color, tags } = req.body;
     const id = req.params.id;
     db.run(
       'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ?, color = ?, tag = ? WHERE id = ?',
-      [lat, lng, descrizione || null, nome || null, autore || null, color || null, tag || null, id],
+      [
+        lat,
+        lng,
+        descrizione || null,
+        nome || null,
+        autore || null,
+        color || null,
+        tags ? JSON.stringify(tags) : null,
+        id,
+      ],
       function (err) {
         if (err) {
           return res.status(500).json({ error: 'DB error' });
