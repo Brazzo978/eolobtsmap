@@ -128,13 +128,15 @@
       background: #eee;
     }
 
-    /* Slide-in marker view modal */
+    /* Fullscreen marker view modal */
     #viewMarkerModal .modal-content {
-      max-width: 600px;
-      width: 90%;
-      height: 50vh;
-      overflow: auto;
-      border-radius: 8px;
+      width: 100%;
+      height: 100%;
+      max-width: none;
+      border-radius: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
       transform: translateY(100vh);
       transition: transform 0.3s ease;
     }
@@ -143,6 +145,11 @@
     }
     #viewMarkerModal .carousel.carousel-slider {
       height: 60%;
+    }
+    #viewMarkerModal .view-info {
+      flex: 1;
+      overflow: auto;
+      padding: 1rem;
     }
   </style>
 </head>
@@ -203,6 +210,7 @@
           Immagini:
           <input type="file" id="markerImages" accept="image/*" multiple />
         </label>
+        <div id="existingImages" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem;"></div>
         <div style="margin-top:1rem;">
           <button type="submit" class="btn">Salva</button>
           <button type="button" id="cancelModal" class="btn grey lighten-1">Annulla</button>
@@ -234,11 +242,13 @@
   </div>
   <div id="viewMarkerModal" class="modal">
     <div class="modal-content">
-      <h4 id="viewTitle"></h4>
-      <p id="viewDesc"></p>
-      <p id="viewTags"></p>
       <div id="viewCarousel" class="carousel carousel-slider"></div>
-      <div id="viewActions" style="margin-top:1rem;"></div>
+      <div class="view-info">
+        <h4 id="viewTitle"></h4>
+        <p id="viewDesc"></p>
+        <p id="viewTags"></p>
+        <div id="viewActions" style="margin-top:1rem;"></div>
+      </div>
     </div>
   </div>
   <div id="resetModal" class="modal">
