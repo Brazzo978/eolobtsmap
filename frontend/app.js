@@ -458,7 +458,13 @@ function createTagIcon(tags) {
   const segments = colors
     .map((c, i) => `${c} ${i * step}% ${(i + 1) * step}%`)
     .join(', ');
-  const style = `background: conic-gradient(${segments}); -webkit-background-clip: text; background-clip: text; color: transparent;`;
+  const style =
+    `background: conic-gradient(${segments});` +
+    ' -webkit-background-clip: text;' +
+    ' background-clip: text;' +
+    ' color: transparent;' +
+    ' -webkit-text-fill-color: transparent;' +
+    ' text-shadow: none;';
   return L.divIcon({
     className: 'custom-pin',
     html: `<i class="material-icons" style="${style}">place</i>`,
