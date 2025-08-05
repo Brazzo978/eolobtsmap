@@ -534,9 +534,6 @@ function openMarkerView(marker, leafletMarker) {
 
   if (images.length) {
     M.Carousel.init(carousel, { fullWidth: true, indicators: true });
-    carousel.querySelectorAll('img').forEach((img) => {
-      img.addEventListener('click', () => img.classList.toggle('enlarged'));
-    });
     carousel.querySelectorAll('.delete-image').forEach((btn) => {
       btn.addEventListener('click', () => {
         const imageId = btn.dataset.imageId;
