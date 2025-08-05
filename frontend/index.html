@@ -127,6 +127,23 @@
     #mapContextMenu button:hover {
       background: #eee;
     }
+
+    /* Slide-in marker view modal */
+    #viewMarkerModal .modal-content {
+      max-width: 600px;
+      width: 90%;
+      height: 50vh;
+      overflow: auto;
+      border-radius: 8px;
+      transform: translateY(100vh);
+      transition: transform 0.3s ease;
+    }
+    #viewMarkerModal.show .modal-content {
+      transform: translateY(0);
+    }
+    #viewMarkerModal .carousel.carousel-slider {
+      height: 60%;
+    }
   </style>
 </head>
 <body>
@@ -216,11 +233,11 @@
     </div>
   </div>
   <div id="viewMarkerModal" class="modal">
-    <div class="modal-content" style="max-width:600px;width:100%;height:90%;overflow:auto;">
+    <div class="modal-content">
       <h4 id="viewTitle"></h4>
       <p id="viewDesc"></p>
       <p id="viewTags"></p>
-      <div id="viewCarousel" class="carousel"></div>
+      <div id="viewCarousel" class="carousel carousel-slider"></div>
       <div id="viewActions" style="margin-top:1rem;"></div>
     </div>
   </div>

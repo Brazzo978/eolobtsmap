@@ -429,7 +429,7 @@ function openMarkerView(marker, leafletMarker) {
       }
       carousel.appendChild(item);
     });
-    M.Carousel.init(carousel);
+    M.Carousel.init(carousel, { fullWidth: true, indicators: true });
   }
   const actions = document.getElementById('viewActions');
   actions.innerHTML = '';
