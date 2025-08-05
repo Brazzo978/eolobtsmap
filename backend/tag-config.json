@@ -1,6 +1,8 @@
 {
   "LTE/5G": "#e6194b",
-  "Radio TV": "#3cb44b",
-  "Wisp Eolo": "#3388ff",
-  "Unknown": "#808080"
+  "Radio": "#3cb44b",
+  "TV": "#ffb10a",
+  "WISP": "#f1ff29",
+  "EOLO": "#0084ff",
+  "Sconosciuto": "#000000"
 }
