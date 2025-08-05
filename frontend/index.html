@@ -110,31 +110,6 @@
     #viewCarousel .carousel-item img.enlarged {
       transform: scale(1.2);
     }
-    .carousel-container {
-      position: relative;
-    }
-    .carousel-container .carousel-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(0,0,0,0.5);
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 2;
-    }
-    .carousel-container .carousel-nav.left {
-      left: 10px;
-    }
-    .carousel-container .carousel-nav.right {
-      right: 10px;
-    }
     #mapContextMenu {
       position: absolute;
       z-index: 2000;
@@ -280,25 +255,17 @@
       </form>
     </div>
   </div>
-    <div id="viewMarkerModal" class="modal">
-      <div class="modal-content">
-        <div class="carousel-container">
-          <button id="carouselPrev" class="carousel-nav left">
-            <i class="material-icons">chevron_left</i>
-          </button>
-          <div id="viewCarousel" class="carousel carousel-slider"></div>
-          <button id="carouselNext" class="carousel-nav right">
-            <i class="material-icons">chevron_right</i>
-          </button>
-        </div>
-        <div class="view-info">
-          <h4 id="viewTitle"></h4>
-          <p id="viewDesc"></p>
-          <p id="viewTags"></p>
-          <div id="viewActions" style="margin-top:1rem;"></div>
-        </div>
+  <div id="viewMarkerModal" class="modal">
+    <div class="modal-content">
+      <div id="viewCarousel" class="carousel carousel-slider"></div>
+      <div class="view-info">
+        <h4 id="viewTitle"></h4>
+        <p id="viewDesc"></p>
+        <p id="viewTags"></p>
+        <div id="viewActions" style="margin-top:1rem;"></div>
       </div>
     </div>
+  </div>
   <div id="resetModal" class="modal">
     <div class="modal-content">
       <h2>Reset Password</h2>
