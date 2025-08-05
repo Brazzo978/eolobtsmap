@@ -19,7 +19,7 @@ const mapContextMenu = document.getElementById('mapContextMenu');
 const insertMarkerBtn = document.getElementById('insertMarkerBtn');
 let savedLat, savedLng;
 const tagFilter = document.getElementById('tagFilter');
-const markerTagSelect = document.getElementById('markerTag');
+const markerTagContainer = document.getElementById('markerTags');
 const markerColorSelect = document.getElementById('markerColor');
 
 const COLOR_OPTIONS = [
@@ -56,7 +56,6 @@ if (markerColorSelect) {
 
 if (window.M && M.FormSelect) {
   if (tagFilter) M.FormSelect.init(tagFilter);
-  if (markerTagSelect) M.FormSelect.init(markerTagSelect);
 }
 
 map.on('contextmenu', (e) => {
@@ -129,23 +128,25 @@ if (loginLink && loginModal && loginForm) {
   });
 }
 
-if (tagFilter && markerTagSelect) {
+if (tagFilter || markerTagContainer) {
   fetch('/tags')
     .then((res) => res.json())
     .then((tags) => {
       tags.forEach((t) => {
-        const optFilter = document.createElement('option');
-        optFilter.value = t;
-        optFilter.textContent = t;
-        tagFilter.appendChild(optFilter);
-        const optMarker = document.createElement('option');
-        optMarker.value = t;
-        optMarker.textContent = t;
-        markerTagSelect.appendChild(optMarker);
+        if (tagFilter) {
+          const optFilter = document.createElement('option');
+          optFilter.value = t;
+          optFilter.textContent = t;
+          tagFilter.appendChild(optFilter);
+        }
+        if (markerTagContainer) {
+          const label = document.createElement('label');
+          label.innerHTML = `<input type="checkbox" value="${t}" /> <span>${t}</span>`;
+          markerTagContainer.appendChild(label);
+        }
       });
-      if (window.M && M.FormSelect) {
+      if (window.M && M.FormSelect && tagFilter) {
         M.FormSelect.init(tagFilter);
-        M.FormSelect.init(markerTagSelect);
       }
     });
 }
@@ -258,7 +259,7 @@ const form = document.getElementById('markerForm');
 function applyTagFilter() {
   const selected = tagFilter ? tagFilter.value : '';
   Object.values(markersById).forEach(({ data, marker }) => {
-    if (!selected || data.tag === selected) {
+    if (!selected || (data.tags && data.tags.includes(selected))) {
       if (!markerClusters.hasLayer(marker)) {
         markerClusters.addLayer(marker);
       }
@@ -307,7 +308,9 @@ form.addEventListener('submit', (e) => {
     lat: parseFloat(document.getElementById('markerLat').value),
     lng: parseFloat(document.getElementById('markerLng').value),
     color: document.getElementById('markerColor').value || '#3388ff',
-    tag: document.getElementById('markerTag').value || null,
+    tags: Array.from(
+      document.querySelectorAll('#markerTags input[type="checkbox"]:checked')
+    ).map((cb) => cb.value),
     images: [],
   };
   if (id) {
@@ -405,11 +408,13 @@ function openModal(marker) {
     colorSelect.appendChild(opt);
   }
   colorSelect.value = marker.color || COLOR_OPTIONS[0];
-  const tagSelect = document.getElementById('markerTag');
-  tagSelect.value = marker.tag || '';
+  if (markerTagContainer) {
+    markerTagContainer.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+      cb.checked = marker.tags ? marker.tags.includes(cb.value) : false;
+    });
+  }
   if (window.M && M.FormSelect) {
     M.FormSelect.init(colorSelect);
-    M.FormSelect.init(tagSelect);
   }
   document.getElementById('markerImages').value = '';
   modal.classList.add('show');
@@ -438,6 +443,7 @@ function createColoredIcon(color) {
 function openMarkerView(marker, leafletMarker) {
   document.getElementById('viewTitle').textContent = marker.nome || 'Marker';
   document.getElementById('viewDesc').textContent = marker.descrizione || '';
+  document.getElementById('viewTags').textContent = (marker.tags || []).join(', ');
   const carousel = document.getElementById('viewCarousel');
   carousel.innerHTML = '';
   if (marker.images && marker.images.length) {
