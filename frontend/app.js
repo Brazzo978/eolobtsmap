@@ -493,6 +493,9 @@ function openMarkerView(marker, leafletMarker) {
       carousel.appendChild(item);
     });
     M.Carousel.init(carousel, { fullWidth: true, indicators: true });
+    carousel.querySelectorAll('img').forEach((img) => {
+      img.addEventListener('click', () => img.classList.toggle('enlarged'));
+    });
   }
   const actions = document.getElementById('viewActions');
   actions.innerHTML = '';
