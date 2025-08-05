@@ -6,7 +6,7 @@ const markersRouter = require('./markers');
 const auditLogsRouter = require('./auditLogs');
 const usersRouter = require('./users');
 const config = require('./config');
-const tags = require('./tags');
+const { loadTags, saveTags } = require('./tags');
 const db = require('./db');
 const bcrypt = require('bcrypt');
 
@@ -21,7 +21,20 @@ app.use('/markers', markersRouter);
 app.use('/audit-logs', auditLogsRouter);
 app.use('/users', usersRouter);
 app.get('/tags', (req, res) => {
-  res.json(tags);
+  res.json(loadTags());
+});
+
+app.put('/tags', authenticateToken, authorizeRole('admin'), (req, res) => {
+  const newTags = req.body;
+  if (!newTags || typeof newTags !== 'object' || Array.isArray(newTags)) {
+    return res.status(400).json({ error: 'Invalid tag format' });
+  }
+  try {
+    saveTags(newTags);
+    res.json(newTags);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save tags' });
+  }
 });
 
 if (config.enableMapCache) {

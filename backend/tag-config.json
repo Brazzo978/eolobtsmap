@@ -1,6 +1,6 @@
-[
-  "LTE/5G",
-  "Radio TV",
-  "Wisp Eolo",
-  "Unknown"
-]
+{
+  "LTE/5G": "#e6194b",
+  "Radio TV": "#3cb44b",
+  "Wisp Eolo": "#3388ff",
+  "Unknown": "#808080"
+}

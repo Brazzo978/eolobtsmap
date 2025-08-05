@@ -61,6 +61,18 @@
         <tbody></tbody>
       </table>
     </section>
+    <section>
+      <h5>Colori Tag</h5>
+      <form id="tagColorForm">
+        <table class="striped" id="tagColorTable">
+          <thead><tr><th>Tag</th><th>Colore</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="col s12" style="margin-top:1rem;">
+          <button type="submit" class="btn waves-effect">Salva</button>
+        </div>
+      </form>
+    </section>
   </div>
 <script>
 function tokenHeader() {
@@ -106,7 +118,37 @@ document.getElementById('userForm').addEventListener('submit', e => {
     });
 });
 
+function loadTagColors() {
+  fetch('/tags')
+    .then(r => r.json())
+    .then(tags => {
+      const tbody = document.querySelector('#tagColorTable tbody');
+      tbody.innerHTML = '';
+      Object.entries(tags).forEach(([tag, color]) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${tag}</td><td><input type="color" value="${color}" data-tag="${tag}"></td>`;
+        tbody.appendChild(tr);
+      });
+    });
+}
+
+document.getElementById('tagColorForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const inputs = document.querySelectorAll('#tagColorTable input[type="color"]');
+  const data = {};
+  inputs.forEach(inp => { data[inp.dataset.tag] = inp.value; });
+  fetch('/tags', { method:'PUT', headers: tokenHeader(), body: JSON.stringify(data) })
+    .then(r => {
+      if (r.ok) {
+        loadTagColors();
+      } else {
+        alert('Errore salvataggio colori');
+      }
+    });
+});
+
 loadUsers();
+loadTagColors();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 <script>
