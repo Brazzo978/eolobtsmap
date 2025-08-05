@@ -1,4 +1,4 @@
-# eolobtsmap
+# btsmap
 
 Applicazione web che consente agli utenti di segnalare la posizione di una BTS tramite una mappa interattiva.
 
