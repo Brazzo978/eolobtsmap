@@ -492,10 +492,6 @@ function openMarkerView(marker, leafletMarker) {
       }
       carousel.appendChild(item);
     });
-    M.Carousel.init(carousel, { fullWidth: true, indicators: true });
-    carousel.querySelectorAll('img').forEach((img) => {
-      img.addEventListener('click', () => img.classList.toggle('enlarged'));
-    });
   }
   const actions = document.getElementById('viewActions');
   actions.innerHTML = '';
@@ -536,23 +532,29 @@ function openMarkerView(marker, leafletMarker) {
   }
   markerViewModal.classList.add('show');
 
-  carousel.querySelectorAll('.delete-image').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const imageId = btn.dataset.imageId;
-      if (confirm('Eliminare questa immagine?')) {
-        fetch(`/markers/${marker.id}/images/${imageId}`, {
-          method: 'DELETE',
-          headers: { Authorization: 'Bearer ' + localStorage.getItem('token') },
-        }).then((res) => {
-          if (res.ok) {
-            marker.images = marker.images.filter((img) => String(img.id) !== String(imageId));
-            markerViewModal.classList.remove('show');
-            openMarkerView(marker, leafletMarker);
-          }
-        });
-      }
+  if (images.length) {
+    M.Carousel.init(carousel, { fullWidth: true, indicators: true });
+    carousel.querySelectorAll('img').forEach((img) => {
+      img.addEventListener('click', () => img.classList.toggle('enlarged'));
     });
-  });
+    carousel.querySelectorAll('.delete-image').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const imageId = btn.dataset.imageId;
+        if (confirm('Eliminare questa immagine?')) {
+          fetch(`/markers/${marker.id}/images/${imageId}`, {
+            method: 'DELETE',
+            headers: { Authorization: 'Bearer ' + localStorage.getItem('token') },
+          }).then((res) => {
+            if (res.ok) {
+              marker.images = marker.images.filter((img) => String(img.id) !== String(imageId));
+              markerViewModal.classList.remove('show');
+              openMarkerView(marker, leafletMarker);
+            }
+          });
+        }
+      });
+    });
+  }
 }
 
 markerViewModal.addEventListener('click', (e) => {
