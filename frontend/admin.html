@@ -65,10 +65,11 @@
       <h5>Colori Tag</h5>
       <form id="tagColorForm">
         <table class="striped" id="tagColorTable">
-          <thead><tr><th>Tag</th><th>Colore</th></tr></thead>
+          <thead><tr><th>Tag</th><th>Colore</th><th>Azioni</th></tr></thead>
           <tbody></tbody>
         </table>
         <div class="col s12" style="margin-top:1rem;">
+          <button type="button" id="addTag" class="btn waves-effect">Aggiungi Tag</button>
           <button type="submit" class="btn waves-effect">Salva</button>
         </div>
       </form>
@@ -118,6 +119,16 @@ document.getElementById('userForm').addEventListener('submit', e => {
     });
 });
 
+function createTagRow(tag = '', color = '#000000') {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input type="text" class="tag-name" value="${tag}" placeholder="Nome tag"></td>
+    <td><input type="color" class="tag-color" value="${color}"></td>
+    <td><button type="button" class="btn-flat deleteTag">Rimuovi</button></td>`;
+  tr.querySelector('.deleteTag').addEventListener('click', () => tr.remove());
+  return tr;
+}
+
 function loadTagColors() {
   fetch('/tags')
     .then(r => r.json())
@@ -125,18 +136,26 @@ function loadTagColors() {
       const tbody = document.querySelector('#tagColorTable tbody');
       tbody.innerHTML = '';
       Object.entries(tags).forEach(([tag, color]) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${tag}</td><td><input type="color" value="${color}" data-tag="${tag}"></td>`;
-        tbody.appendChild(tr);
+        tbody.appendChild(createTagRow(tag, color));
       });
     });
 }
 
+document.getElementById('addTag').addEventListener('click', () => {
+  document.querySelector('#tagColorTable tbody').appendChild(createTagRow());
+});
+
 document.getElementById('tagColorForm').addEventListener('submit', e => {
   e.preventDefault();
-  const inputs = document.querySelectorAll('#tagColorTable input[type="color"]');
+  const rows = document.querySelectorAll('#tagColorTable tbody tr');
   const data = {};
-  inputs.forEach(inp => { data[inp.dataset.tag] = inp.value; });
+  rows.forEach(row => {
+    const name = row.querySelector('.tag-name').value.trim();
+    const color = row.querySelector('.tag-color').value;
+    if (name) {
+      data[name] = color;
+    }
+  });
   fetch('/tags', { method:'PUT', headers: tokenHeader(), body: JSON.stringify(data) })
     .then(r => {
       if (r.ok) {
