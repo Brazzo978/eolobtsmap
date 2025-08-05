@@ -345,18 +345,12 @@ form.addEventListener('submit', (e) => {
 function addMarker(marker) {
   if (!marker.images) marker.images = [];
   const leafletMarker = L.marker([marker.lat, marker.lng], {
-    draggable: currentUserRole === 'admin' || currentUserRole === 'editor',
+    draggable: false,
     icon: createTagIcon(marker.tags),
   });
   markerClusters.addLayer(leafletMarker);
   leafletMarker.on('click', () => {
     openMarkerView(marker, leafletMarker);
-  });
-  leafletMarker.on('dragend', () => {
-    const pos = leafletMarker.getLatLng();
-    marker.lat = pos.lat;
-    marker.lng = pos.lng;
-    saveMarker(marker);
   });
   markersById[marker.id] = { data: marker, marker: leafletMarker };
   applyTagFilter();
