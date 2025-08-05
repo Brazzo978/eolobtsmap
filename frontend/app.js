@@ -472,12 +472,16 @@ function openMarkerView(marker, leafletMarker) {
   document.getElementById('viewDesc').textContent = marker.descrizione || '';
   document.getElementById('viewTags').textContent = (marker.tags || []).join(', ');
   const carousel = document.getElementById('viewCarousel');
+  const prevBtn = document.getElementById('carouselPrev');
+  const nextBtn = document.getElementById('carouselNext');
   const existing = M.Carousel.getInstance(carousel);
   if (existing) {
     existing.destroy();
   }
   carousel.innerHTML = '';
   const images = (marker.images || []).slice(0, 10);
+  prevBtn.style.display = 'none';
+  nextBtn.style.display = 'none';
   if (images.length) {
     images.forEach((img) => {
       const item = document.createElement('a');
@@ -492,10 +496,16 @@ function openMarkerView(marker, leafletMarker) {
       }
       carousel.appendChild(item);
     });
-    M.Carousel.init(carousel, { fullWidth: true, indicators: true });
+    const instance = M.Carousel.init(carousel, { fullWidth: true, indicators: true });
     carousel.querySelectorAll('img').forEach((img) => {
       img.addEventListener('click', () => img.classList.toggle('enlarged'));
     });
+    if (images.length > 1) {
+      prevBtn.style.display = 'flex';
+      nextBtn.style.display = 'flex';
+      prevBtn.onclick = () => instance.prev();
+      nextBtn.onclick = () => instance.next();
+    }
   }
   const actions = document.getElementById('viewActions');
   actions.innerHTML = '';
