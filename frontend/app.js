@@ -219,6 +219,7 @@ if (searchBtn && searchInput) {
 const markersById = {};
 const modal = document.getElementById('markerModal');
 const form = document.getElementById('markerForm');
+let currentEditMarker = null;
 
 function applyTagFilter() {
   const selected = tagFilter ? tagFilter.value : '';
@@ -275,13 +276,17 @@ form.addEventListener('submit', (e) => {
     tags: Array.from(
       document.querySelectorAll('#markerTags input[type="checkbox"]:checked')
     ).map((cb) => cb.value),
-    images: [],
+    images: currentEditMarker && currentEditMarker.images
+      ? currentEditMarker.images.slice()
+      : [],
   };
   if (id) {
     marker.id = Number(id);
-    if (markersById[id]) {
-      marker.images = markersById[id].data.images || [];
-    }
+  }
+  const files = document.getElementById('markerImages').files;
+  if (marker.images.length + files.length > 10) {
+    alert('Puoi caricare al massimo 10 immagini per marker');
+    return;
   }
   const method = id ? 'PUT' : 'POST';
   const url = id ? `/markers/${id}` : '/markers';
@@ -301,7 +306,6 @@ form.addEventListener('submit', (e) => {
     })
     .then((data) => {
       marker.id = id ? Number(id) : data.id;
-      const files = document.getElementById('markerImages').files;
       const token = localStorage.getItem('token');
       const uploads = Array.from(files).map((file) => {
         const fd = new FormData();
@@ -321,6 +325,7 @@ form.addEventListener('submit', (e) => {
       });
       return Promise.all(uploads).then(() => {
         document.getElementById('markerImages').value = '';
+        currentEditMarker = marker;
         if (id) {
           const existing = markersById[id];
           existing.data = marker;
@@ -357,7 +362,59 @@ function addMarker(marker) {
   applyTagFilter();
 }
 
+function renderExistingImages() {
+  const container = document.getElementById('existingImages');
+  if (!container || !currentEditMarker) return;
+  container.innerHTML = '';
+  const imgs = currentEditMarker.images ? currentEditMarker.images.slice(0, 10) : [];
+  imgs.forEach((img) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    const imageEl = document.createElement('img');
+    imageEl.src = img.url;
+    imageEl.alt = img.didascalia || '';
+    imageEl.style.maxWidth = '100px';
+    imageEl.style.maxHeight = '100px';
+    const del = document.createElement('button');
+    del.textContent = '×';
+    del.className = 'btn red remove-img';
+    del.style.position = 'absolute';
+    del.style.top = '0';
+    del.style.right = '0';
+    del.dataset.imageId = img.id;
+    wrapper.appendChild(imageEl);
+    wrapper.appendChild(del);
+    container.appendChild(wrapper);
+  });
+  container.querySelectorAll('.remove-img').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const imageId = btn.dataset.imageId;
+      if (currentEditMarker.id && confirm('Eliminare questa immagine?')) {
+        fetch(`/markers/${currentEditMarker.id}/images/${imageId}`, {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + localStorage.getItem('token') },
+        }).then((res) => {
+          if (res.ok) {
+            currentEditMarker.images = currentEditMarker.images.filter(
+              (img) => String(img.id) !== String(imageId)
+            );
+            renderExistingImages();
+          }
+        });
+      }
+    });
+  });
+  const fileInput = document.getElementById('markerImages');
+  if (fileInput) {
+    fileInput.disabled = currentEditMarker.images && currentEditMarker.images.length >= 10;
+  }
+}
+
 function openModal(marker) {
+  currentEditMarker = marker;
+  if (currentEditMarker.images && currentEditMarker.images.length > 10) {
+    currentEditMarker.images = currentEditMarker.images.slice(0, 10);
+  }
   document.getElementById('markerId').value = marker.id || '';
   document.getElementById('markerName').value = marker.nome || '';
   document.getElementById('markerDesc').value = marker.descrizione || '';
@@ -369,6 +426,7 @@ function openModal(marker) {
     });
   }
   document.getElementById('markerImages').value = '';
+  renderExistingImages();
   modal.classList.add('show');
 }
 
@@ -414,9 +472,14 @@ function openMarkerView(marker, leafletMarker) {
   document.getElementById('viewDesc').textContent = marker.descrizione || '';
   document.getElementById('viewTags').textContent = (marker.tags || []).join(', ');
   const carousel = document.getElementById('viewCarousel');
+  const existing = M.Carousel.getInstance(carousel);
+  if (existing) {
+    existing.destroy();
+  }
   carousel.innerHTML = '';
-  if (marker.images && marker.images.length) {
-    marker.images.forEach((img) => {
+  const images = (marker.images || []).slice(0, 10);
+  if (images.length) {
+    images.forEach((img) => {
       const item = document.createElement('a');
       item.className = 'carousel-item';
       item.innerHTML = `<img src="${img.url}" alt="${img.didascalia || ''}">`;

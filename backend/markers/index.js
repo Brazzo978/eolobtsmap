@@ -30,6 +30,9 @@ function validateMarkerInput(req, res, next) {
     if (!Array.isArray(images)) {
       return res.status(400).json({ error: 'Images must be an array' });
     }
+    if (images.length > 10) {
+      return res.status(400).json({ error: 'Max 10 images per marker' });
+    }
     for (const img of images) {
       if (typeof img.url !== 'string' || (img.didascalia && typeof img.didascalia !== 'string')) {
         return res.status(400).json({ error: 'Invalid image format' });
@@ -264,27 +267,39 @@ router.post(
     if (!file) {
       return res.status(400).json({ error: 'Image file is required' });
     }
-    const saveUrl = (url) => {
-      db.run(
-        'INSERT INTO marker_images (marker_id, url, didascalia) VALUES (?, ?, ?)',
-        [markerId, url, didascalia],
-        function (err) {
-          if (err) {
-            return res.status(500).json({ error: 'DB error' });
-          }
-          res.status(201).json({ id: this.lastID, url });
+    db.get(
+      'SELECT COUNT(*) as cnt FROM marker_images WHERE marker_id = ?',
+      [markerId],
+      (err, row) => {
+        if (err) {
+          return res.status(500).json({ error: 'DB error' });
         }
-      );
-    };
-    const uploadsDir = config.uploadsDir;
-    fs.mkdirSync(uploadsDir, { recursive: true });
-    const filename = `${Date.now()}_${file.originalname}`;
-    fs.writeFile(path.join(uploadsDir, filename), file.buffer, (err) => {
-      if (err) {
-        return res.status(500).json({ error: 'Upload error' });
+        if (row.cnt >= 10) {
+          return res.status(400).json({ error: 'Max 10 images per marker' });
+        }
+        const saveUrl = (url) => {
+          db.run(
+            'INSERT INTO marker_images (marker_id, url, didascalia) VALUES (?, ?, ?)',
+            [markerId, url, didascalia],
+            function (err2) {
+              if (err2) {
+                return res.status(500).json({ error: 'DB error' });
+              }
+              res.status(201).json({ id: this.lastID, url });
+            }
+          );
+        };
+        const uploadsDir = config.uploadsDir;
+        fs.mkdirSync(uploadsDir, { recursive: true });
+        const filename = `${Date.now()}_${file.originalname}`;
+        fs.writeFile(path.join(uploadsDir, filename), file.buffer, (err3) => {
+          if (err3) {
+            return res.status(500).json({ error: 'Upload error' });
+          }
+          saveUrl(`/uploads/${filename}`);
+        });
       }
-      saveUrl(`/uploads/${filename}`);
-    });
+    );
   }
 );
 
