@@ -2,16 +2,27 @@ const fs = require('fs');
 const path = require('path');
 
 const tagsPath = path.join(__dirname, 'tag-config.json');
-let tags = ["LTE/5G", "Radio TV", "Wisp Eolo", "Unknown"];
 
-try {
-  const data = fs.readFileSync(tagsPath, 'utf-8');
-  const parsed = JSON.parse(data);
-  if (Array.isArray(parsed)) {
-    tags = parsed;
+function loadTags() {
+  try {
+    const data = fs.readFileSync(tagsPath, 'utf-8');
+    const parsed = JSON.parse(data);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch (err) {
+    // ignore
   }
-} catch (err) {
-  // use default tags if file missing or invalid
+  return {
+    'LTE/5G': '#e6194b',
+    'Radio TV': '#3cb44b',
+    'Wisp Eolo': '#3388ff',
+    Unknown: '#808080',
+  };
 }
 
-module.exports = tags;
+function saveTags(newTags) {
+  fs.writeFileSync(tagsPath, JSON.stringify(newTags, null, 2));
+}
+
+module.exports = { loadTags, saveTags };

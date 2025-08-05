@@ -20,43 +20,30 @@ const insertMarkerBtn = document.getElementById('insertMarkerBtn');
 let savedLat, savedLng;
 const tagFilter = document.getElementById('tagFilter');
 const markerTagContainer = document.getElementById('markerTags');
-const markerColorSelect = document.getElementById('markerColor');
+let tagColors = {};
 
-const COLOR_OPTIONS = [
-  '#3388ff',
-  '#e6194b',
-  '#3cb44b',
-  '#ffe119',
-  '#4363d8',
-  '#f58231',
-  '#911eb4',
-  '#46f0f0',
-  '#f032e6',
-  '#bcf60c',
-  '#fabebe',
-  '#008080',
-  '#e6beff',
-  '#9a6324',
-  '#fffac8',
-  '#800000'
-];
-
-if (markerColorSelect) {
-  COLOR_OPTIONS.forEach((color) => {
-    const opt = document.createElement('option');
-    opt.value = color;
-    opt.textContent = color;
-    opt.style.background = color;
-    markerColorSelect.appendChild(opt);
+const tagsPromise = fetch('/tags')
+  .then((res) => res.json())
+  .then((data) => {
+    tagColors = data;
+    const tags = Object.keys(data);
+    tags.forEach((t) => {
+      if (tagFilter) {
+        const optFilter = document.createElement('option');
+        optFilter.value = t;
+        optFilter.textContent = t;
+        tagFilter.appendChild(optFilter);
+      }
+      if (markerTagContainer) {
+        const label = document.createElement('label');
+        label.innerHTML = `<input type="checkbox" value="${t}" /> <span>${t}</span>`;
+        markerTagContainer.appendChild(label);
+      }
+    });
+    if (window.M && M.FormSelect && tagFilter) {
+      M.FormSelect.init(tagFilter);
+    }
   });
-  if (window.M && M.FormSelect) {
-    M.FormSelect.init(markerColorSelect);
-  }
-}
-
-if (window.M && M.FormSelect) {
-  if (tagFilter) M.FormSelect.init(tagFilter);
-}
 
 map.on('contextmenu', (e) => {
   e.originalEvent.preventDefault();
@@ -126,29 +113,6 @@ if (loginLink && loginModal && loginForm) {
       })
       .catch(() => alert('Login fallito'));
   });
-}
-
-if (tagFilter || markerTagContainer) {
-  fetch('/tags')
-    .then((res) => res.json())
-    .then((tags) => {
-      tags.forEach((t) => {
-        if (tagFilter) {
-          const optFilter = document.createElement('option');
-          optFilter.value = t;
-          optFilter.textContent = t;
-          tagFilter.appendChild(optFilter);
-        }
-        if (markerTagContainer) {
-          const label = document.createElement('label');
-          label.innerHTML = `<input type="checkbox" value="${t}" /> <span>${t}</span>`;
-          markerTagContainer.appendChild(label);
-        }
-      });
-      if (window.M && M.FormSelect && tagFilter) {
-        M.FormSelect.init(tagFilter);
-      }
-    });
 }
 
 if (logoutLink) {
@@ -272,7 +236,8 @@ if (tagFilter) {
   tagFilter.addEventListener('change', applyTagFilter);
 }
 
-fetch('/markers')
+tagsPromise
+  .then(() => fetch('/markers'))
   .then((response) => {
     if (!response.ok) {
       throw new Error('Network response was not ok');
@@ -307,7 +272,6 @@ form.addEventListener('submit', (e) => {
     descrizione: document.getElementById('markerDesc').value,
     lat: parseFloat(document.getElementById('markerLat').value),
     lng: parseFloat(document.getElementById('markerLng').value),
-    color: document.getElementById('markerColor').value || '#3388ff',
     tags: Array.from(
       document.querySelectorAll('#markerTags input[type="checkbox"]:checked')
     ).map((cb) => cb.value),
@@ -361,7 +325,7 @@ form.addEventListener('submit', (e) => {
           const existing = markersById[id];
           existing.data = marker;
           existing.marker.setLatLng([marker.lat, marker.lng]);
-          existing.marker.setIcon(createColoredIcon(marker.color));
+          existing.marker.setIcon(createTagIcon(marker.tags));
           markerClusters.refreshClusters(existing.marker);
         } else {
           addMarker(marker);
@@ -377,7 +341,7 @@ function addMarker(marker) {
   if (!marker.images) marker.images = [];
   const leafletMarker = L.marker([marker.lat, marker.lng], {
     draggable: currentUserRole === 'admin' || currentUserRole === 'editor',
-    icon: createColoredIcon(marker.color || '#3388ff'),
+    icon: createTagIcon(marker.tags),
   });
   markerClusters.addLayer(leafletMarker);
   leafletMarker.on('click', () => {
@@ -399,22 +363,10 @@ function openModal(marker) {
   document.getElementById('markerDesc').value = marker.descrizione || '';
   document.getElementById('markerLat').value = marker.lat;
   document.getElementById('markerLng').value = marker.lng;
-  const colorSelect = document.getElementById('markerColor');
-  if (marker.color && colorSelect && !COLOR_OPTIONS.includes(marker.color)) {
-    const opt = document.createElement('option');
-    opt.value = marker.color;
-    opt.textContent = marker.color;
-    opt.style.background = marker.color;
-    colorSelect.appendChild(opt);
-  }
-  colorSelect.value = marker.color || COLOR_OPTIONS[0];
   if (markerTagContainer) {
     markerTagContainer.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
       cb.checked = marker.tags ? marker.tags.includes(cb.value) : false;
     });
-  }
-  if (window.M && M.FormSelect) {
-    M.FormSelect.init(colorSelect);
   }
   document.getElementById('markerImages').value = '';
   modal.classList.add('show');
@@ -431,10 +383,27 @@ function saveMarker(marker) {
   }).catch((err) => console.error('Update failed', err));
 }
 
-function createColoredIcon(color) {
+function createTagIcon(tags) {
+  const colors = (tags || []).map((t) => tagColors[t]).filter(Boolean);
+  if (colors.length === 0) {
+    colors.push('#3388ff');
+  }
+  if (colors.length === 1) {
+    return L.divIcon({
+      className: 'custom-pin',
+      html: `<i class="material-icons" style="color:${colors[0]}">place</i>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+    });
+  }
+  const step = 100 / colors.length;
+  const segments = colors
+    .map((c, i) => `${c} ${i * step}% ${(i + 1) * step}%`)
+    .join(', ');
+  const style = `background: conic-gradient(${segments}); -webkit-background-clip: text; background-clip: text; color: transparent;`;
   return L.divIcon({
     className: 'custom-pin',
-    html: `<i class="material-icons" style="color:${color}">place</i>`,
+    html: `<i class="material-icons" style="${style}">place</i>`,
     iconSize: [32, 32],
     iconAnchor: [16, 32],
   });
