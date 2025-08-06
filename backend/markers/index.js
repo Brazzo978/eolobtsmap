@@ -60,22 +60,12 @@ function validateMarkerInput(req, res, next) {
 
 router.get('/', (req, res) => {
   const tagFilter = req.query.tag;
-  const bbox = req.query.bbox;
   let sql = `SELECT m.*, mi.id as image_id, mi.url, mi.didascalia
                FROM markers m LEFT JOIN marker_images mi ON m.id = mi.marker_id`;
   const params = [];
-  const conditions = [];
   if (tagFilter) {
-    conditions.push('m.tag LIKE ?');
+    sql += ' WHERE m.tag LIKE ?';
     params.push(`%${tagFilter}%`);
-  }
-  if (bbox) {
-    const [south, west, north, east] = bbox.split(',').map(Number);
-    conditions.push('m.lat BETWEEN ? AND ? AND m.lng BETWEEN ? AND ?');
-    params.push(south, north, west, east);
-  }
-  if (conditions.length) {
-    sql += ' WHERE ' + conditions.join(' AND ');
   }
   db.all(sql, params, (err, rows) => {
     if (err) {
