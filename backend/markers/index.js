@@ -89,6 +89,7 @@ router.get('/', (req, res) => {
           autore: row.autore,
           color: row.color,
           tags: parsedTags,
+          localita: row.localita,
           timestamp: row.timestamp,
           images: [],
         };
@@ -135,6 +136,7 @@ router.get('/:id', (req, res) => {
       autore: rows[0].autore,
       color: rows[0].color,
       tags: parsedTags,
+      localita: rows[0].localita,
       timestamp: rows[0].timestamp,
       images: [],
     };
@@ -156,10 +158,25 @@ router.post(
   authenticateToken,
   authorizeRoles('admin', 'editor'),
   validateMarkerInput,
-  (req, res, next) => {
+  async (req, res, next) => {
     const { lat, lng, descrizione, images, nome, autore, color, tags } = req.body;
+
+    let localita = null;
+    try {
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+        { headers: { 'User-Agent': 'btsmap/1.0' } }
+      );
+      if (resp.ok) {
+        const data = await resp.json();
+        localita = data.display_name || null;
+      }
+    } catch (e) {
+      // Ignore geocoding errors
+    }
+
     db.run(
-      'INSERT INTO markers (lat, lng, descrizione, nome, autore, color, tag) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO markers (lat, lng, descrizione, nome, autore, color, tag, localita) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
       [
         lat,
         lng,
@@ -168,6 +185,7 @@ router.post(
         autore || null,
         color || null,
         tags ? JSON.stringify(tags) : null,
+        localita,
       ],
       function (err) {
         if (err) {
@@ -186,12 +204,12 @@ router.post(
               return res.status(500).json({ error: 'DB error' });
             }
             res.locals.markerId = markerId;
-            res.status(201).json({ id: markerId });
+            res.status(201).json({ id: markerId, localita });
             next();
           });
         } else {
           res.locals.markerId = markerId;
-          res.status(201).json({ id: markerId });
+          res.status(201).json({ id: markerId, localita });
           next();
         }
       }

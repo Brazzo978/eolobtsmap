@@ -282,6 +282,9 @@ form.addEventListener('submit', (e) => {
   };
   if (id) {
     marker.id = Number(id);
+    if (currentEditMarker && currentEditMarker.localita) {
+      marker.localita = currentEditMarker.localita;
+    }
   }
   const files = document.getElementById('markerImages').files;
   if (marker.images.length + files.length > 10) {
@@ -306,6 +309,7 @@ form.addEventListener('submit', (e) => {
     })
     .then((data) => {
       marker.id = id ? Number(id) : data.id;
+      marker.localita = data.localita || marker.localita || null;
       const token = localStorage.getItem('token');
       const uploads = Array.from(files).map((file) => {
         const fd = new FormData();
@@ -470,6 +474,9 @@ function createTagIcon(tags) {
 function openMarkerView(marker, leafletMarker) {
   document.getElementById('viewTitle').textContent = marker.nome || 'Marker';
   document.getElementById('viewDesc').textContent = marker.descrizione || '';
+  document.getElementById('viewLocalita').textContent = marker.localita
+    ? `Località: ${marker.localita}`
+    : '';
   document.getElementById('viewTags').textContent = (marker.tags || []).join(', ');
   const carousel = document.getElementById('viewCarousel');
   const existing = M.Carousel.getInstance(carousel);
