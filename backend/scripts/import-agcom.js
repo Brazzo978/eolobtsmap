@@ -39,6 +39,9 @@ async function main() {
   const sheet = wb.Sheets[wb.SheetNames[0]];
   const rows = xlsx.utils.sheet_to_json(sheet, { defval: null });
 
+  // Group rows by same lat, lng and localita
+  const markers = new Map();
+
   for (const row of rows) {
     const lat = parseCoord(row['LAT.']);
     const lng = parseCoord(row['LONG.']);
@@ -48,15 +51,35 @@ async function main() {
     }
 
     const localita = row['UBICAZIONE'] || null;
-    const descrizione = row['BOUQUET'] || null;
-    const frequenze = row['FREQ. CENTRALE/PORTANTE'] || null;
+    const key = `${lat}:${lng}:${localita || ''}`;
+    if (!markers.has(key)) {
+      markers.set(key, {
+        lat,
+        lng,
+        localita,
+        descrizioni: new Set(),
+        frequenze: new Set(),
+        tags: new Set()
+      });
+    }
+
+    const marker = markers.get(key);
+    if (row['BOUQUET']) marker.descrizioni.add(row['BOUQUET']);
+    if (row['FREQ. CENTRALE/PORTANTE']) marker.frequenze.add(row['FREQ. CENTRALE/PORTANTE']);
     const tag = mapTipo(row['TIPO']);
-    const tags = tag ? JSON.stringify([tag]) : null;
+    if (tag) marker.tags.add(tag);
+  }
+
+  for (const marker of markers.values()) {
+    const descrizione = Array.from(marker.descrizioni).join(' | ');
+    const frequenze = Array.from(marker.frequenze).join(', ');
+    const tags = marker.tags.size ? JSON.stringify(Array.from(marker.tags)) : null;
+    const nome = marker.localita || descrizione;
 
     try {
       await runAsync(
         'INSERT INTO markers (lat, lng, descrizione, nome, tag, localita, frequenze) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [lat, lng, descrizione, descrizione, tags, localita, frequenze]
+        [marker.lat, marker.lng, descrizione, nome, tags, marker.localita, frequenze]
       );
     } catch (err) {
       console.error('DB insert failed:', err.message);
