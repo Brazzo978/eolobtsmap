@@ -237,6 +237,23 @@ if (tagFilter) {
   tagFilter.addEventListener('change', applyTagFilter);
 }
 
+function addMarkersInBatches(markers, batchSize = 500) {
+  return new Promise((resolve) => {
+    let index = 0;
+    function processBatch() {
+      const slice = markers.slice(index, index + batchSize);
+      slice.forEach((m) => addMarker(m));
+      index += batchSize;
+      if (index < markers.length) {
+        requestAnimationFrame(processBatch);
+      } else {
+        resolve();
+      }
+    }
+    processBatch();
+  });
+}
+
 tagsPromise
   .then(() => fetch('/markers'))
   .then((response) => {
@@ -245,12 +262,8 @@ tagsPromise
     }
     return response.json();
   })
-  .then((markers) => {
-    markers.forEach((marker) => {
-      addMarker(marker);
-    });
-    applyTagFilter();
-  })
+  .then((markers) => addMarkersInBatches(markers))
+  .then(() => applyTagFilter())
   .catch((err) => {
     console.error('Failed to load markers', err);
   });
@@ -358,7 +371,6 @@ function addMarker(marker) {
     openMarkerView(marker, leafletMarker);
   });
   markersById[marker.id] = { data: marker, marker: leafletMarker };
-  applyTagFilter();
 }
 
 function renderExistingImages() {
