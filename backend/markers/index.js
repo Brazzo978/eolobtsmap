@@ -12,7 +12,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
 
 function validateMarkerInput(req, res, next) {
-  const { lat, lng, descrizione, images, color, tags } = req.body;
+  const { lat, lng, descrizione, images, color, tags, frequenze } = req.body;
   if (
     typeof lat !== 'number' ||
     typeof lng !== 'number' ||
@@ -41,6 +41,9 @@ function validateMarkerInput(req, res, next) {
   }
   if (color && typeof color !== 'string') {
     return res.status(400).json({ error: 'Invalid color' });
+  }
+  if (frequenze && typeof frequenze !== 'string') {
+    return res.status(400).json({ error: 'Invalid frequenze' });
   }
   if (tags) {
     if (!Array.isArray(tags)) {
@@ -89,6 +92,8 @@ router.get('/', (req, res) => {
           autore: row.autore,
           color: row.color,
           tags: parsedTags,
+          localita: row.localita,
+          frequenze: row.frequenze,
           timestamp: row.timestamp,
           images: [],
         };
@@ -135,6 +140,8 @@ router.get('/:id', (req, res) => {
       autore: rows[0].autore,
       color: rows[0].color,
       tags: parsedTags,
+      localita: rows[0].localita,
+      frequenze: rows[0].frequenze,
       timestamp: rows[0].timestamp,
       images: [],
     };
@@ -156,10 +163,25 @@ router.post(
   authenticateToken,
   authorizeRoles('admin', 'editor'),
   validateMarkerInput,
-  (req, res, next) => {
-    const { lat, lng, descrizione, images, nome, autore, color, tags } = req.body;
+  async (req, res, next) => {
+    const { lat, lng, descrizione, images, nome, autore, color, tags, frequenze } = req.body;
+
+    let localita = null;
+    try {
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+        { headers: { 'User-Agent': 'btsmap/1.0' } }
+      );
+      if (resp.ok) {
+        const data = await resp.json();
+        localita = data.display_name || null;
+      }
+    } catch (e) {
+      // Ignore geocoding errors
+    }
+
     db.run(
-      'INSERT INTO markers (lat, lng, descrizione, nome, autore, color, tag) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO markers (lat, lng, descrizione, nome, autore, color, tag, localita, frequenze) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         lat,
         lng,
@@ -168,6 +190,8 @@ router.post(
         autore || null,
         color || null,
         tags ? JSON.stringify(tags) : null,
+        localita,
+        frequenze || null,
       ],
       function (err) {
         if (err) {
@@ -186,12 +210,12 @@ router.post(
               return res.status(500).json({ error: 'DB error' });
             }
             res.locals.markerId = markerId;
-            res.status(201).json({ id: markerId });
+            res.status(201).json({ id: markerId, localita });
             next();
           });
         } else {
           res.locals.markerId = markerId;
-          res.status(201).json({ id: markerId });
+          res.status(201).json({ id: markerId, localita });
           next();
         }
       }
@@ -206,10 +230,10 @@ router.put(
   authorizeRoles('admin', 'editor'),
   validateMarkerInput,
   (req, res, next) => {
-    const { lat, lng, descrizione, images, nome, autore, color, tags } = req.body;
+    const { lat, lng, descrizione, images, nome, autore, color, tags, frequenze } = req.body;
     const id = req.params.id;
     db.run(
-      'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ?, color = ?, tag = ? WHERE id = ?',
+      'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ?, color = ?, tag = ?, frequenze = ? WHERE id = ?',
       [
         lat,
         lng,
@@ -218,6 +242,7 @@ router.put(
         autore || null,
         color || null,
         tags ? JSON.stringify(tags) : null,
+        frequenze || null,
         id,
       ],
       function (err) {

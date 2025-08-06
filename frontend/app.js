@@ -237,6 +237,23 @@ if (tagFilter) {
   tagFilter.addEventListener('change', applyTagFilter);
 }
 
+function addMarkersInBatches(markers, batchSize = 500) {
+  return new Promise((resolve) => {
+    let index = 0;
+    function processBatch() {
+      const slice = markers.slice(index, index + batchSize);
+      slice.forEach((m) => addMarker(m));
+      index += batchSize;
+      if (index < markers.length) {
+        requestAnimationFrame(processBatch);
+      } else {
+        resolve();
+      }
+    }
+    processBatch();
+  });
+}
+
 tagsPromise
   .then(() => fetch('/markers'))
   .then((response) => {
@@ -245,12 +262,8 @@ tagsPromise
     }
     return response.json();
   })
-  .then((markers) => {
-    markers.forEach((marker) => {
-      addMarker(marker);
-    });
-    applyTagFilter();
-  })
+  .then((markers) => addMarkersInBatches(markers))
+  .then(() => applyTagFilter())
   .catch((err) => {
     console.error('Failed to load markers', err);
   });
@@ -271,6 +284,7 @@ form.addEventListener('submit', (e) => {
   const marker = {
     nome: document.getElementById('markerName').value,
     descrizione: document.getElementById('markerDesc').value,
+    frequenze: document.getElementById('markerFreq').value,
     lat: parseFloat(document.getElementById('markerLat').value),
     lng: parseFloat(document.getElementById('markerLng').value),
     tags: Array.from(
@@ -282,6 +296,9 @@ form.addEventListener('submit', (e) => {
   };
   if (id) {
     marker.id = Number(id);
+    if (currentEditMarker && currentEditMarker.localita) {
+      marker.localita = currentEditMarker.localita;
+    }
   }
   const files = document.getElementById('markerImages').files;
   if (marker.images.length + files.length > 10) {
@@ -306,6 +323,7 @@ form.addEventListener('submit', (e) => {
     })
     .then((data) => {
       marker.id = id ? Number(id) : data.id;
+      marker.localita = data.localita || marker.localita || null;
       const token = localStorage.getItem('token');
       const uploads = Array.from(files).map((file) => {
         const fd = new FormData();
@@ -353,7 +371,6 @@ function addMarker(marker) {
     openMarkerView(marker, leafletMarker);
   });
   markersById[marker.id] = { data: marker, marker: leafletMarker };
-  applyTagFilter();
 }
 
 function renderExistingImages() {
@@ -412,6 +429,7 @@ function openModal(marker) {
   document.getElementById('markerId').value = marker.id || '';
   document.getElementById('markerName').value = marker.nome || '';
   document.getElementById('markerDesc').value = marker.descrizione || '';
+  document.getElementById('markerFreq').value = marker.frequenze || '';
   document.getElementById('markerLat').value = marker.lat;
   document.getElementById('markerLng').value = marker.lng;
   if (markerTagContainer) {
@@ -470,6 +488,12 @@ function createTagIcon(tags) {
 function openMarkerView(marker, leafletMarker) {
   document.getElementById('viewTitle').textContent = marker.nome || 'Marker';
   document.getElementById('viewDesc').textContent = marker.descrizione || '';
+  document.getElementById('viewFreq').textContent = marker.frequenze
+    ? `Frequenze: ${marker.frequenze}`
+    : '';
+  document.getElementById('viewLocalita').textContent = marker.localita
+    ? `Località: ${marker.localita}`
+    : '';
   document.getElementById('viewTags').textContent = (marker.tags || []).join(', ');
   const carousel = document.getElementById('viewCarousel');
   const existing = M.Carousel.getInstance(carousel);
