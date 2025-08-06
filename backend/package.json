@@ -6,7 +6,8 @@
     "start": "node server.js",
     "test": "node -e \"console.log('No tests')\"",
     "update-map": "node scripts/update-map.js",
-    "db": "node db-server.js"
+    "db": "node db-server.js",
+    "import-agcom": "node scripts/import-agcom.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
@@ -14,6 +15,7 @@
     "jsonwebtoken": "^9.0.0",
     "nodemailer": "^6.9.1",
     "multer": "^2.0.2",
-    "sqlite3": "^5.1.6"
+    "sqlite3": "^5.1.6",
+    "xlsx": "^0.18.5"
   }
 }
