@@ -51,3 +51,14 @@ Il database verrà creato nella cartella indicata da `DB_DIR` o, in mancanza, in
 - `backend/` – API e server Express con SQLite.
 - `frontend/` – interfaccia utente basata su Leaflet.
 - `deploy/` – materiali e configurazioni per il deployment.
+
+## Importazione da file AGCOM
+
+Per importare marker da un file Excel scaricato dal sito AGCOM è disponibile lo script:
+
+```bash
+cd backend
+npm run import-agcom -- path/to/file.xlsx
+```
+
+Lo script converte automaticamente le coordinate "LAT." e "LONG." in gradi decimali, salva l'"Ubicazione" nel campo `localita` e il "Bouquet" nella `descrizione`, assegnando il tag `Radio` per i tipi *FM* e *RD* oppure `TV` per i tipi *TD*.
