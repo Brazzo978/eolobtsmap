@@ -1,34 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>What About Us</title>
-  <link
-    href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
-    rel="stylesheet"
-  />
-  <link
-    href="https://fonts.googleapis.com/icon?family=Material+Icons"
-    rel="stylesheet"
-  />
+  <title>About Us - BTSMAP</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
 </head>
 <body>
+  <!-- Navbar -->
   <div class="navbar-fixed">
     <nav class="teal lighten-2">
       <div class="nav-wrapper container">
         <a href="index.html" class="brand-logo">BTSMAP</a>
         <ul class="right">
           <li><a href="index.html">Mappa</a></li>
+          <li><a href="contact.html">Contatti</a></li>
         </ul>
       </div>
     </nav>
   </div>
-  <div class="container" style="margin-top:2rem;">
+
+  <!-- About Content -->
+  <div class="container" style="margin-top: 2rem;">
     <h3>About Us</h3>
-    <p>Informazioni sul progetto e sul team.</p>
-    <p><a href="index.html">Torna alla mappa</a></p>
+
+    <!-- Scopo del Sito -->
+    <div class="section">
+      <h5>Scopo del Sito</h5>
+      <p>
+        BTSMAP fornisce una <strong>mappa interattiva</strong> aperta a tutti per visualizzare i dati riguardanti tutti i tipi di antenne sul territorio italiano: radio AM, FM, DAB, TV digitale, LTE/5G, WISP (locali o Eolo) e antenne con servizi non classificati.
+      </p>
+      <p>
+        La mappa incorpora il database ufficiale AGCOM disponibile <a href="http://www.catastofrequenze.agcom.it/catasto/pubblico" target="_blank">qui</a>, ma si basa anche sui contributi della community.
+      </p>
+      <p>
+        Al momento per contribuire, contatta l'amministratore e richiedi un account con permessi di <em>editor</em>. In futuro le submission saranno possibili direttamente via GUI.
+      </p>
+    </div>
+
+    <!-- Team Section -->
+    <div class="section">
+      <h5>Il Team</h5>
+      <div class="row">
+        <div class="col s12 m6 l4">
+          <div class="card">
+            <div class="card-image">
+              <img src="img/team1.jpg" alt="ManuelB">
+            </div>
+            <div class="card-content">
+              <span class="card-title">Manuel B.</span>
+              <p>Founder di BTSMAP: ideatore del progetto e appassionato di tecnologia 4G/5G ed ogni tipo di antenna.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Servizi Compute & Cloud -->
+    <div class="section">
+      <h5>Servizi Compute &amp; Cloud</h5>
+      <p>
+        L'infrastruttura di computing e servizi cloud è fornita da <a href="https://www.3klab.com/" target="_blank">3klab</a>.
+      </p>
+    </div>
+
+    <!-- Contact Section -->
+    <div class="section">
+      <h5>Contattaci</h5>
+      <p>
+        Per domande, collaborazioni o per chiedere l'account editor:
+      </p>
+      <ul>
+        <li>Telegram: <a href="https://t.me/ManuelBia24">@ManuelBia24</a></li>
+        <li>Email: <a href="mailto:supporto@btsmap.net">supporto@btsmap.net</a></li>
+      </ul>
+    </div>
+
+    <p><a href="index.html">← Torna alla mappa</a></p>
   </div>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </body>
 </html>
