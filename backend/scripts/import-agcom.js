@@ -49,13 +49,14 @@ async function main() {
 
     const localita = row['UBICAZIONE'] || null;
     const descrizione = row['BOUQUET'] || null;
+    const frequenze = row['FREQ. CENTRALE/PORTANTE'] || null;
     const tag = mapTipo(row['TIPO']);
     const tags = tag ? JSON.stringify([tag]) : null;
 
     try {
       await runAsync(
-        'INSERT INTO markers (lat, lng, descrizione, nome, tag, localita) VALUES (?, ?, ?, ?, ?, ?)',
-        [lat, lng, descrizione, descrizione, tags, localita]
+        'INSERT INTO markers (lat, lng, descrizione, nome, tag, localita, frequenze) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [lat, lng, descrizione, descrizione, tags, localita, frequenze]
       );
     } catch (err) {
       console.error('DB insert failed:', err.message);
