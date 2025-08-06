@@ -217,7 +217,6 @@ if (searchBtn && searchInput) {
 }
 
 const markersById = {};
-const loadedMarkerIds = new Set();
 const modal = document.getElementById('markerModal');
 const form = document.getElementById('markerForm');
 let currentEditMarker = null;
@@ -256,24 +255,18 @@ function addMarkersInBatches(markers, batchSize = 500) {
 }
 
 tagsPromise
-  .then(() => loadMarkers());
-
-map.on('moveend', loadMarkers);
-
-function loadMarkers() {
-  return fetch('/markers?bbox=' + map.getBounds().toBBoxString())
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      return response.json();
-    })
-    .then((markers) => addMarkersInBatches(markers))
-    .then(() => applyTagFilter())
-    .catch((err) => {
-      console.error('Failed to load markers', err);
-    });
-}
+  .then(() => fetch('/markers'))
+  .then((response) => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.json();
+  })
+  .then((markers) => addMarkersInBatches(markers))
+  .then(() => applyTagFilter())
+  .catch((err) => {
+    console.error('Failed to load markers', err);
+  });
 
 map.on('click', () => {
   if (mapContextMenu.classList.contains('show')) {
@@ -368,7 +361,6 @@ form.addEventListener('submit', (e) => {
 });
 
 function addMarker(marker) {
-  if (loadedMarkerIds.has(marker.id)) return;
   if (!marker.images) marker.images = [];
   const leafletMarker = L.marker([marker.lat, marker.lng], {
     draggable: false,
@@ -379,7 +371,6 @@ function addMarker(marker) {
     openMarkerView(marker, leafletMarker);
   });
   markersById[marker.id] = { data: marker, marker: leafletMarker };
-  loadedMarkerIds.add(marker.id);
 }
 
 function renderExistingImages() {
@@ -555,7 +546,6 @@ function openMarkerView(marker, leafletMarker) {
           if (res.ok) {
             markerClusters.removeLayer(leafletMarker);
             delete markersById[marker.id];
-            loadedMarkerIds.delete(marker.id);
             markerViewModal.classList.remove('show');
           }
         });
