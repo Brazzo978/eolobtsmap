@@ -35,6 +35,7 @@ db.serialize(() => {
     color TEXT,
     tag TEXT,
     localita TEXT,
+    frequenze TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
@@ -42,6 +43,7 @@ db.serialize(() => {
   db.run('ALTER TABLE markers ADD COLUMN color TEXT', () => {});
   db.run('ALTER TABLE markers ADD COLUMN tag TEXT', () => {});
   db.run('ALTER TABLE markers ADD COLUMN localita TEXT', () => {});
+  db.run('ALTER TABLE markers ADD COLUMN frequenze TEXT', () => {});
 
   db.run(`CREATE TABLE IF NOT EXISTS marker_images (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
