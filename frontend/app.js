@@ -271,6 +271,7 @@ form.addEventListener('submit', (e) => {
   const marker = {
     nome: document.getElementById('markerName').value,
     descrizione: document.getElementById('markerDesc').value,
+    frequenze: document.getElementById('markerFreq').value,
     lat: parseFloat(document.getElementById('markerLat').value),
     lng: parseFloat(document.getElementById('markerLng').value),
     tags: Array.from(
@@ -416,6 +417,7 @@ function openModal(marker) {
   document.getElementById('markerId').value = marker.id || '';
   document.getElementById('markerName').value = marker.nome || '';
   document.getElementById('markerDesc').value = marker.descrizione || '';
+  document.getElementById('markerFreq').value = marker.frequenze || '';
   document.getElementById('markerLat').value = marker.lat;
   document.getElementById('markerLng').value = marker.lng;
   if (markerTagContainer) {
@@ -474,6 +476,9 @@ function createTagIcon(tags) {
 function openMarkerView(marker, leafletMarker) {
   document.getElementById('viewTitle').textContent = marker.nome || 'Marker';
   document.getElementById('viewDesc').textContent = marker.descrizione || '';
+  document.getElementById('viewFreq').textContent = marker.frequenze
+    ? `Frequenze: ${marker.frequenze}`
+    : '';
   document.getElementById('viewLocalita').textContent = marker.localita
     ? `Località: ${marker.localita}`
     : '';
