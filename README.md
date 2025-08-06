@@ -61,4 +61,4 @@ cd backend
 npm run import-agcom -- path/to/file.xlsx
 ```
 
-Lo script converte automaticamente le coordinate "LAT." e "LONG." in gradi decimali, salva l'"Ubicazione" nel campo `localita` e il "Bouquet" nella `descrizione`, assegnando il tag `Radio` per i tipi *FM* e *RD* oppure `TV` per i tipi *TD*.
+Lo script converte automaticamente le coordinate "LAT." e "LONG." in gradi decimali, salva l'"Ubicazione" nel campo `localita`, il "Bouquet" nella `descrizione` e la "FREQ. CENTRALE/PORTANTE" nel campo `frequenze`, assegnando il tag `Radio` per i tipi *FM* e *RD* oppure `TV` per i tipi *TD*.
