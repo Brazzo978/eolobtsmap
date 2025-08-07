@@ -7,7 +7,8 @@
     "test": "node -e \"console.log('No tests')\"",
     "update-map": "node scripts/update-map.js",
     "db": "node db-server.js",
-    "import-agcom": "node scripts/import-agcom.js"
+    "import-agcom": "node scripts/import-agcom.js",
+    "import-arpat-toscana": "node scripts/import-arpat-toscana.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
