@@ -1,9 +1,5 @@
-const path = require('path');
-
-const backendDir = __dirname;
-
-const defaultUploadsDir = path.join(backendDir, 'uploads');
-const defaultDbDir = path.join(backendDir, 'database');
+const defaultUploadsDir = '/opt/media';
+const defaultDbDir = '/opt/database';
 
 module.exports = {
   enableMapCache: process.env.ENABLE_MAP_CACHE === 'true',

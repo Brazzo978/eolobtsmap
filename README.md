@@ -32,9 +32,9 @@ Applicazione web che consente agli utenti di segnalare la posizione di una BTS t
 ## Personalizzazioni
 
 - Per cambiare la porta del server è possibile usare la variabile d'ambiente `PORT`.
-- Impostare `UPLOADS_DIR` per specificare la cartella in cui salvare le immagini (di default `backend/uploads`).
+- Impostare `UPLOADS_DIR` per specificare la cartella in cui salvare le immagini (di default `/opt/media`).
 - Impostare `ENABLE_MAP_CACHE=true` per abilitare il download periodico dell'estratto OSM dell'Italia; la funzione è disabilitata di default.
-- Impostare `DB_DIR` per specificare una cartella esterna in cui salvare il database SQLite.
+- Impostare `DB_DIR` per specificare una cartella esterna in cui salvare il database SQLite (di default `/opt/database`).
 
 ## Database standalone
 
@@ -44,7 +44,7 @@ Per eseguire il database come processo indipendente, utile per mantenerlo attivo
 npm run db
 ```
 
-Il database verrà creato nella cartella indicata da `DB_DIR` o, in mancanza, in `backend/`.
+Il database verrà creato nella cartella indicata da `DB_DIR` o, in mancanza, in `/opt/database`.
 
 ## Struttura del progetto
 
