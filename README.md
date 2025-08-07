@@ -58,7 +58,11 @@ Per importare marker da un file Excel scaricato dal sito AGCOM è disponibile lo
 
 ```bash
 cd backend
-npm run import-agcom -- path/to/file.xlsx
+ npm run import-agcom -- path/to/file.xlsx
 ```
 
  Lo script converte automaticamente le coordinate "LAT." e "LONG." in gradi decimali, salva l'"Ubicazione" nel campo `localita`, il "Bouquet" nella `descrizione` e la "FREQ. CENTRALE/PORTANTE" nel campo `frequenze`, assegnando il tag `Radio` per i tipi *FM* e *RD* oppure `TV` per i tipi *TD*. Se più righe presentano la stessa latitudine, longitudine e ubicazione, i relativi dettagli vengono uniti in un unico marker.
+
+## Funzionalità Admin
+
+Gli utenti con ruolo *admin* possono attivare la **Modalità unione** dalla pagina principale e selezionare più marker vicini. I marker scelti vengono fusi in uno solo, combinando descrizioni, tag, frequenze e immagini dei marker originali.
