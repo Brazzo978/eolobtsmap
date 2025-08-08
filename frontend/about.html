@@ -6,14 +6,50 @@
     <title>About Us - BTSMAP</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <style>
+      nav .nav-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+
+      nav .nav-wrapper.container {
+        max-width: none;
+        width: 100%;
+      }
+
+      .left-section {
+        display: flex;
+        align-items: center;
+      }
+
+      nav .nav-wrapper .brand-logo {
+        position: static;
+        flex-shrink: 0;
+        margin-right: 10px;
+      }
+
+      nav .nav-wrapper ul {
+        margin: 0;
+        flex-shrink: 0;
+      }
+
+      nav.teal.lighten-2 {
+        background-color: #2c3e50 !important;
+      }
+    </style>
   </head>
   <body>
     <!-- Navbar -->
     <div class="navbar-fixed">
       <nav class="teal lighten-2">
         <div class="nav-wrapper container">
-          <a href="index.html" class="brand-logo">BTSMAP</a>
-          <ul class="right">
+          <div class="left-section">
+            <a href="index.html" class="brand-logo">BTSMAP</a>
+          </div>
+          <ul>
             <li>
               <a href="index.html">Mappa</a>
             </li>
