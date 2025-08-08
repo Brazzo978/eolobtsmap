@@ -4,7 +4,7 @@ const path = require('path');
 const multer = require('multer');
 const config = require('../config');
 const db = require('../db');
-const { authenticateToken, authorizeRoles } = require('../middleware/auth');
+const { authenticateToken, authorizeRoles, authorizeRole } = require('../middleware/auth');
 const { logMarkerAction } = require('../middleware/audit');
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -362,6 +362,158 @@ router.delete(
         );
       }
     );
+  }
+);
+
+router.post(
+  '/merge',
+  authenticateToken,
+  authorizeRole('admin'),
+  (req, res) => {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length < 2) {
+      return res.status(400).json({ error: 'At least two IDs required' });
+    }
+    const placeholders = ids.map(() => '?').join(',');
+    const sql =
+      `SELECT m.*, mi.url, mi.didascalia FROM markers m LEFT JOIN marker_images mi ON m.id = mi.marker_id WHERE m.id IN (${placeholders})`;
+    db.all(sql, ids, (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: 'DB error' });
+      }
+      const markers = {};
+      rows.forEach((row) => {
+        if (!markers[row.id]) {
+          let parsedTags = [];
+          if (row.tag) {
+            try {
+              const t = JSON.parse(row.tag);
+              parsedTags = Array.isArray(t) ? t : [row.tag];
+            } catch {
+              parsedTags = [row.tag];
+            }
+          }
+          markers[row.id] = {
+            id: row.id,
+            lat: row.lat,
+            lng: row.lng,
+            nome: row.nome,
+            descrizione: row.descrizione,
+            autore: row.autore,
+            color: row.color,
+            tags: parsedTags,
+            localita: row.localita,
+            frequenze: row.frequenze,
+            images: [],
+          };
+        }
+        if (row.url) {
+          markers[row.id].images.push({ url: row.url, didascalia: row.didascalia });
+        }
+      });
+      const list = ids.map((id) => markers[id]).filter(Boolean);
+      if (list.length < 2) {
+        return res.status(404).json({ error: 'Markers not found' });
+      }
+      const baseId = list[0].id;
+      const agg = {
+        lat: list.reduce((s, m) => s + m.lat, 0) / list.length,
+        lng: list.reduce((s, m) => s + m.lng, 0) / list.length,
+        nome: Array.from(new Set(list.map((m) => m.nome).filter(Boolean))).join(' / ') || null,
+        descrizione:
+          Array.from(new Set(list.map((m) => m.descrizione).filter(Boolean))).join(' | ') || null,
+        autore: list.find((m) => m.autore)?.autore || null,
+        color: list.find((m) => m.color)?.color || null,
+        frequenze:
+          Array.from(
+            new Set(
+              list.flatMap((m) =>
+                m.frequenze ? m.frequenze.split(',').map((f) => f.trim()) : []
+              )
+            )
+          ).join(', ') || null,
+        localita:
+          Array.from(new Set(list.map((m) => m.localita).filter(Boolean))).join(' | ') || null,
+        tags: Array.from(new Set(list.flatMap((m) => m.tags || []))),
+        images: list.flatMap((m) => m.images).slice(0, 10),
+      };
+      db.serialize(() => {
+        db.run(
+          'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ?, color = ?, tag = ?, localita = ?, frequenze = ? WHERE id = ?',
+          [
+            agg.lat,
+            agg.lng,
+            agg.descrizione,
+            agg.nome,
+            agg.autore,
+            agg.color,
+            agg.tags.length ? JSON.stringify(agg.tags) : null,
+            agg.localita,
+            agg.frequenze,
+            baseId,
+          ]
+        );
+        db.run('DELETE FROM marker_images WHERE marker_id = ?', [baseId]);
+        const stmt = db.prepare(
+          'INSERT INTO marker_images (marker_id, url, didascalia) VALUES (?, ?, ?)'
+        );
+        for (const img of agg.images) {
+          stmt.run(baseId, img.url, img.didascalia || null);
+        }
+        stmt.finalize();
+        const others = ids.filter((id) => id !== baseId);
+        const deleteNext = (idx) => {
+          if (idx >= others.length) {
+            db.get('SELECT * FROM markers WHERE id = ?', [baseId], (err2, row) => {
+              if (err2) {
+                return res.status(500).json({ error: 'DB error' });
+              }
+              let parsedTags = [];
+              if (row.tag) {
+                try {
+                  const t = JSON.parse(row.tag);
+                  parsedTags = Array.isArray(t) ? t : [row.tag];
+                } catch {
+                  parsedTags = [row.tag];
+                }
+              }
+              const result = {
+                id: row.id,
+                lat: row.lat,
+                lng: row.lng,
+                nome: row.nome,
+                descrizione: row.descrizione,
+                autore: row.autore,
+                color: row.color,
+                localita: row.localita,
+                frequenze: row.frequenze,
+                tags: parsedTags,
+                images: agg.images,
+              };
+              return res.json(result);
+            });
+            return;
+          }
+          const id = others[idx];
+          db.run(
+            'UPDATE audit_logs SET marker_id = ? WHERE marker_id = ?',
+            [baseId, id],
+            (err3) => {
+              if (err3) {
+                return res.status(500).json({ error: 'DB error' });
+              }
+              db.run('DELETE FROM markers WHERE id = ?', [id], (err4) => {
+                if (err4) {
+                  return res.status(500).json({ error: 'DB error' });
+                }
+                deleteNext(idx + 1);
+              });
+            }
+          );
+        };
+        deleteNext(0);
+      });
+    });
   }
 );
 

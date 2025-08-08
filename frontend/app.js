@@ -21,6 +21,16 @@ let savedLat, savedLng;
 const tagFilter = document.getElementById('tagFilter');
 const markerTagContainer = document.getElementById('markerTags');
 let tagColors = {};
+const mergeModeBtn = document.getElementById('mergeModeBtn');
+const mergeSelectedBtn = document.getElementById('mergeSelectedBtn');
+let mergeMode = false;
+const selectedMarkers = new Set();
+const selectedIcon = L.divIcon({
+  className: 'custom-pin',
+  html: '<i class="material-icons" style="color:#ff9800">place</i>',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+});
 
 const tagsPromise = fetch('/tags')
   .then((res) => res.json())
@@ -123,6 +133,63 @@ if (logoutLink) {
   });
 }
 
+if (mergeModeBtn) {
+  mergeModeBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    mergeMode = !mergeMode;
+    if (!mergeMode) {
+      mergeModeBtn.textContent = 'Modalità unione';
+      if (mergeSelectedBtn) mergeSelectedBtn.style.display = 'none';
+      clearSelection();
+    } else {
+      mergeModeBtn.textContent = 'Esci unione';
+    }
+  });
+}
+
+if (mergeSelectedBtn) {
+  mergeSelectedBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (selectedMarkers.size < 2) return;
+    const ids = Array.from(selectedMarkers);
+    fetch('/markers/merge', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + localStorage.getItem('token'),
+      },
+      body: JSON.stringify({ ids }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error('Merge failed');
+        return res.json();
+      })
+      .then((marker) => {
+        ids.forEach((id) => {
+          if (String(id) !== String(marker.id) && markersById[id]) {
+            markerClusters.removeLayer(markersById[id].marker);
+            delete markersById[id];
+          }
+        });
+        if (markersById[marker.id]) {
+          const entry = markersById[marker.id];
+          entry.data = marker;
+          entry.marker.setLatLng([marker.lat, marker.lng]);
+          entry.marker.setIcon(createTagIcon(marker.tags));
+          markerClusters.refreshClusters(entry.marker);
+        } else {
+          addMarker(marker);
+        }
+        mergeMode = false;
+        mergeModeBtn.textContent = 'Modalità unione';
+        clearSelection();
+        mergeSelectedBtn.style.display = 'none';
+        applyTagFilter();
+      })
+      .catch(() => alert('Errore unione marker'));
+  });
+}
+
 function parseJwt(token) {
   try {
     return JSON.parse(atob(token.split('.')[1]));
@@ -140,15 +207,21 @@ function updateUI() {
     currentUserRole = payload ? payload.role : null;
     if (payload && payload.role === 'admin') {
       adminLink.style.display = 'inline';
+      if (mergeModeBtn) mergeModeBtn.style.display = 'inline';
     } else {
       adminLink.style.display = 'none';
+      if (mergeModeBtn) mergeModeBtn.style.display = 'none';
     }
   } else {
     loginLink.style.display = 'inline';
     logoutLink.style.display = 'none';
     adminLink.style.display = 'none';
+    if (mergeModeBtn) mergeModeBtn.style.display = 'none';
     currentUserRole = null;
   }
+  if (mergeSelectedBtn) mergeSelectedBtn.style.display = 'none';
+  mergeMode = false;
+  clearSelection();
 }
 updateUI();
 
@@ -220,6 +293,31 @@ const markersById = {};
 const modal = document.getElementById('markerModal');
 const form = document.getElementById('markerForm');
 let currentEditMarker = null;
+
+function clearSelection() {
+  selectedMarkers.forEach((id) => {
+    const entry = markersById[id];
+    if (entry) {
+      entry.marker.setIcon(createTagIcon(entry.data.tags));
+    }
+  });
+  selectedMarkers.clear();
+}
+
+function toggleSelectMarker(id) {
+  const entry = markersById[id];
+  if (!entry) return;
+  if (selectedMarkers.has(id)) {
+    selectedMarkers.delete(id);
+    entry.marker.setIcon(createTagIcon(entry.data.tags));
+  } else {
+    selectedMarkers.add(id);
+    entry.marker.setIcon(selectedIcon);
+  }
+  if (mergeMode && mergeSelectedBtn) {
+    mergeSelectedBtn.style.display = selectedMarkers.size >= 2 ? 'inline' : 'none';
+  }
+}
 
 function applyTagFilter() {
   const selected = tagFilter ? tagFilter.value : '';
@@ -368,7 +466,11 @@ function addMarker(marker) {
   });
   markerClusters.addLayer(leafletMarker);
   leafletMarker.on('click', () => {
-    openMarkerView(marker, leafletMarker);
+    if (mergeMode) {
+      toggleSelectMarker(marker.id);
+    } else {
+      openMarkerView(marker, leafletMarker);
+    }
   });
   markersById[marker.id] = { data: marker, marker: leafletMarker };
 }

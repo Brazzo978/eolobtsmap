@@ -20,5 +20,5 @@ Per motivi di performance il caching dell'estratto OpenStreetMap è disattivato 
 
 ## Configurazione del database
 
-- Impostare la variabile d'ambiente `DB_DIR` per utilizzare una cartella esterna dove salvare il file `data.sqlite`.
+- Impostare la variabile d'ambiente `DB_DIR` per utilizzare una cartella esterna dove salvare il file `data.sqlite` (di default `/opt/database`).
 - È possibile avviare il database come processo separato con `npm run db` nella cartella `backend`.
