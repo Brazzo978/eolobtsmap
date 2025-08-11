@@ -86,10 +86,10 @@ async function main() {
     let lng = parseFloat(parts[8]);
     if (Number.isNaN(lat) || Number.isNaN(lng)) continue;
 
-    const rawLat = lat;
     const latDeg = roundMeters / 111320; // approx meters per degree latitude
-    const lngDeg = roundMeters / (111320 * Math.cos((rawLat * Math.PI) / 180));
     lat = Math.round(lat / latDeg) * latDeg;
+    const latRad = (lat * Math.PI) / 180;
+    const lngDeg = roundMeters / (111320 * Math.cos(latRad));
     lng = Math.round(lng / lngDeg) * lngDeg;
     lat = Number(lat.toFixed(6));
     lng = Number(lng.toFixed(6));
