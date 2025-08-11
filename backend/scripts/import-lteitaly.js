@@ -69,15 +69,12 @@ async function main() {
     const parts = line.split(';');
     if (parts.length < 10) continue;
 
-    const key = parts[5];
-    if (!key || seen.has(key)) continue;
-
-    let lat = parseFloat(parts[7]);
-    let lng = parseFloat(parts[8]);
+    const lat = parseFloat(parts[7]);
+    const lng = parseFloat(parts[8]);
     if (Number.isNaN(lat) || Number.isNaN(lng)) continue;
 
-    lat = Number(lat.toFixed(6));
-    lng = Number(lng.toFixed(6));
+    const key = `${lat},${lng}`;
+    if (seen.has(key)) continue;
     seen.add(key);
 
     const tokens = parts[9].trim().split(/\s+/);
