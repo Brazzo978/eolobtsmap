@@ -1,6 +1,8 @@
 const xlsx = require('xlsx');
 const db = require('../db');
 
+const SOURCE = 'AGCOM';
+
 function parseCoord(coord) {
   if (!coord || typeof coord !== 'string') return null;
   const m = coord.match(/^(\d+)([NSEW])(\d{2})(\d{2})$/i);
@@ -22,8 +24,26 @@ function mapTipo(t) {
 
 function runAsync(sql, params) {
   return new Promise((resolve, reject) => {
-    db.run(sql, params, err => {
-      if (err) reject(err); else resolve();
+    db.run(sql, params, function (err) {
+      if (err) reject(err);
+      else resolve({ lastID: this.lastID });
+    });
+  });
+}
+
+function getOrCreateUserId(username) {
+  return new Promise((resolve, reject) => {
+    db.get('SELECT id FROM users WHERE username = ?', [username], (err, row) => {
+      if (err) return reject(err);
+      if (row) return resolve(row.id);
+      db.run(
+        'INSERT INTO users (username, role) VALUES (?, ?)',
+        [username, 'user'],
+        function (err2) {
+          if (err2) return reject(err2);
+          resolve(this.lastID);
+        }
+      );
     });
   });
 }
@@ -41,6 +61,8 @@ async function main() {
 
   // Group rows by same lat, lng and localita
   const markers = new Map();
+
+  const userId = await getOrCreateUserId(SOURCE);
 
   for (const row of rows) {
     const lat = parseCoord(row['LAT.']);
@@ -77,9 +99,22 @@ async function main() {
     const nome = marker.localita || descrizione;
 
     try {
+      const result = await runAsync(
+        'INSERT INTO markers (lat, lng, descrizione, nome, autore, tag, localita, frequenze) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          marker.lat,
+          marker.lng,
+          descrizione,
+          nome,
+          SOURCE,
+          tags,
+          marker.localita,
+          frequenze,
+        ]
+      );
       await runAsync(
-        'INSERT INTO markers (lat, lng, descrizione, nome, tag, localita, frequenze) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [marker.lat, marker.lng, descrizione, nome, tags, marker.localita, frequenze]
+        'INSERT INTO audit_logs (user_id, action, marker_id) VALUES (?, ?, ?)',
+        [userId, 'create', result.lastID]
       );
     } catch (err) {
       console.error('DB insert failed:', err.message);

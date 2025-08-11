@@ -2,6 +2,8 @@ const xlsx = require('xlsx');
 const proj4 = require('proj4');
 const db = require('../db');
 
+const SOURCE = 'ARIA Veneto';
+
 // Gauss-Boaga (EPSG:3003) projection used by the dataset
 const gaussBoaga =
   '+proj=tmerc +lat_0=0 +lon_0=9 +k=0.9996 +x_0=1500000 +y_0=0 +ellps=intl ' +
@@ -9,8 +11,26 @@ const gaussBoaga =
 
 function runAsync(sql, params) {
   return new Promise((resolve, reject) => {
-    db.run(sql, params, err => {
-      if (err) reject(err); else resolve();
+    db.run(sql, params, function (err) {
+      if (err) reject(err);
+      else resolve({ lastID: this.lastID });
+    });
+  });
+}
+
+function getOrCreateUserId(username) {
+  return new Promise((resolve, reject) => {
+    db.get('SELECT id FROM users WHERE username = ?', [username], (err, row) => {
+      if (err) return reject(err);
+      if (row) return resolve(row.id);
+      db.run(
+        'INSERT INTO users (username, role) VALUES (?, ?)',
+        [username, 'user'],
+        function (err2) {
+          if (err2) return reject(err2);
+          resolve(this.lastID);
+        }
+      );
     });
   });
 }
@@ -81,6 +101,8 @@ async function main() {
   const sheet = wb.Sheets[wb.SheetNames[0]];
   const rows = xlsx.utils.sheet_to_json(sheet, { defval: null });
 
+  const userId = await getOrCreateUserId(SOURCE);
+
   for (const row of rows) {
     const { lat, lng } = convertCoords(row['coord_x'], row['coord_y']);
     if (lat == null || lng == null) {
@@ -100,9 +122,13 @@ async function main() {
     const tagsStr = tags.length ? JSON.stringify(tags) : null;
 
     try {
+      const result = await runAsync(
+        'INSERT INTO markers (lat, lng, descrizione, nome, autore, tag, localita, frequenze) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [lat, lng, descrizione, nome, SOURCE, tagsStr, null, null]
+      );
       await runAsync(
-        'INSERT INTO markers (lat, lng, descrizione, nome, tag, localita, frequenze) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [lat, lng, descrizione, nome, tagsStr, null, null]
+        'INSERT INTO audit_logs (user_id, action, marker_id) VALUES (?, ?, ?)',
+        [userId, 'create', result.lastID]
       );
     } catch (err) {
       console.error('DB insert failed:', err.message);
