@@ -49,8 +49,9 @@ function getProviderFromFilename(filePath) {
 
 async function main() {
   const filePath = process.argv[2];
+  const roundMeters = parseFloat(process.argv[3]) || 10; // default 10 m
   if (!filePath) {
-    console.error('Usage: node scripts/import-lteitaly.js <file.ntm>');
+    console.error('Usage: node scripts/import-lteitaly.js <file.ntm> [roundMeters=10]');
     process.exit(1);
   }
 
@@ -69,12 +70,20 @@ async function main() {
     const parts = line.split(';');
     if (parts.length < 10) continue;
 
-    const lat = parseFloat(parts[7]);
-    const lng = parseFloat(parts[8]);
+    const key = parts[5];
+    if (!key || seen.has(key)) continue;
+
+    let lat = parseFloat(parts[7]);
+    let lng = parseFloat(parts[8]);
     if (Number.isNaN(lat) || Number.isNaN(lng)) continue;
 
-    const key = `${lat},${lng}`;
-    if (seen.has(key)) continue;
+    const rawLat = lat;
+    const latDeg = roundMeters / 111320; // approx meters per degree latitude
+    const lngDeg = roundMeters / (111320 * Math.cos((rawLat * Math.PI) / 180));
+    lat = Math.round(lat / latDeg) * latDeg;
+    lng = Math.round(lng / lngDeg) * lngDeg;
+    lat = Number(lat.toFixed(6));
+    lng = Number(lng.toFixed(6));
     seen.add(key);
 
     const tokens = parts[9].trim().split(/\s+/);
