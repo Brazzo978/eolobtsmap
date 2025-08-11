@@ -596,6 +596,9 @@ function openMarkerView(marker, leafletMarker) {
   document.getElementById('viewLocalita').textContent = marker.localita
     ? `Località: ${marker.localita}`
     : '';
+  document.getElementById('viewAutore').textContent = marker.autore
+    ? `Inserito da: ${marker.autore}`
+    : '';
   document.getElementById('viewTags').textContent = (marker.tags || []).join(', ');
   const carousel = document.getElementById('viewCarousel');
   const existing = M.Carousel.getInstance(carousel);
