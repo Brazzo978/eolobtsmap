@@ -14,6 +14,15 @@ function runAsync(sql, params) {
   });
 }
 
+function getAsync(sql, params) {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => {
+      if (err) reject(err);
+      else resolve(row);
+    });
+  });
+}
+
 function getOrCreateUserId(username) {
   return new Promise((resolve, reject) => {
     db.get('SELECT id FROM users WHERE username = ?', [username], (err, row) => {
@@ -88,6 +97,35 @@ async function main() {
 
     const tokens = parts[9].trim().split(/\s+/);
     const siteName = tokens.slice(3).join(' ');
+
+    const existing = await getAsync(
+      'SELECT id, descrizione FROM markers WHERE lat = ? AND lng = ?',
+      [lat, lng]
+    );
+
+    if (existing) {
+      const [basePart, provPart] = (existing.descrizione || '').split(' | Provider:');
+      const providers = provPart
+        ? provPart.split(',').map((p) => p.trim()).filter(Boolean)
+        : [];
+      if (providers.includes(provider)) continue;
+      const base = basePart && basePart.trim() ? basePart.trim() : siteName;
+      providers.push(provider);
+      const newDescrizione = `${base} | Provider:${providers.join(',')}`;
+      try {
+        await runAsync('UPDATE markers SET descrizione = ? WHERE id = ?', [
+          newDescrizione,
+          existing.id,
+        ]);
+        await runAsync(
+          'INSERT INTO audit_logs (user_id, action, marker_id) VALUES (?, ?, ?)',
+          [userId, 'update', existing.id]
+        );
+      } catch (err) {
+        console.error('DB update failed:', err.message);
+      }
+      continue;
+    }
 
     const nome = `${lat},${lng}`;
     const descrizione = `${siteName} | Provider:${provider}`;
