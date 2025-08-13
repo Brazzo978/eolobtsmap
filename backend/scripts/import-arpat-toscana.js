@@ -1,6 +1,7 @@
 const xlsx = require('xlsx');
 const proj4 = require('proj4');
 const db = require('../db');
+const { existsNearbyMarker } = require('./import-utils');
 
 function runAsync(sql, params) {
   return new Promise((resolve, reject) => {
@@ -58,8 +59,9 @@ function mapTags(tipologia, gestore) {
 
 async function main() {
   const filePath = process.argv[2];
+  const radius = parseFloat(process.argv[3]) || 50;
   if (!filePath) {
-    console.error('Usage: node scripts/import-arpat-toscana.js <file.xlsx>');
+    console.error('Usage: node scripts/import-arpat-toscana.js <file.xlsx> [radiusMeters]');
     process.exit(1);
   }
 
@@ -78,6 +80,12 @@ async function main() {
     const { lat, lng } = convertCoords(est, nord);
     if (lat == null || lng == null) {
       console.warn('Skipping row due to failed coordinate conversion');
+      continue;
+    }
+    if (await existsNearbyMarker(lat, lng, radius)) {
+      console.log(
+        `Skipping marker at ${lat},${lng} - within ${radius}m of existing marker`
+      );
       continue;
     }
 

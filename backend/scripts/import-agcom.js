@@ -1,5 +1,6 @@
 const xlsx = require('xlsx');
 const db = require('../db');
+const { existsNearbyMarker } = require('./import-utils');
 
 function parseCoord(coord) {
   if (!coord || typeof coord !== 'string') return null;
@@ -30,8 +31,9 @@ function runAsync(sql, params) {
 
 async function main() {
   const filePath = process.argv[2];
+  const radius = parseFloat(process.argv[3]) || 50;
   if (!filePath) {
-    console.error('Usage: node scripts/import-agcom.js <file.xlsx>');
+    console.error('Usage: node scripts/import-agcom.js <file.xlsx> [radiusMeters]');
     process.exit(1);
   }
 
@@ -77,6 +79,13 @@ async function main() {
     const nome = marker.localita || descrizione;
 
     try {
+      const exists = await existsNearbyMarker(marker.lat, marker.lng, radius);
+      if (exists) {
+        console.log(
+          `Skipping marker at ${marker.lat},${marker.lng} - within ${radius}m of existing marker`
+        );
+        continue;
+      }
       await runAsync(
         'INSERT INTO markers (lat, lng, descrizione, nome, tag, localita, frequenze) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [marker.lat, marker.lng, descrizione, nome, tags, marker.localita, frequenze]
