@@ -1,6 +1,7 @@
 const xlsx = require('xlsx');
 const proj4 = require('proj4');
 const db = require('../db');
+const { findNearbyMarker } = require('./utils');
 
 const SOURCE = 'ARPAT Toscana';
 
@@ -78,8 +79,9 @@ function mapTags(tipologia, gestore) {
 
 async function main() {
   const filePath = process.argv[2];
+  const radiusMeters = parseFloat(process.argv[3]) || 10;
   if (!filePath) {
-    console.error('Usage: node scripts/import-arpat-toscana.js <file.xlsx>');
+    console.error('Usage: node scripts/import-arpat-toscana.js <file.xlsx> [radiusMeters=10]');
     process.exit(1);
   }
 
@@ -102,6 +104,9 @@ async function main() {
       console.warn('Skipping row due to failed coordinate conversion');
       continue;
     }
+
+    const existing = await findNearbyMarker(lat, lng, radiusMeters);
+    if (existing) continue;
 
     const localita = row['Indirizzo'] || null;
     const frequenze = row['Tecnologia'] || null;

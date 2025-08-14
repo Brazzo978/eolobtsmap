@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const db = require('../db');
+const { findNearbyMarker } = require('./utils');
 
 const SOURCE = 'https://lteitaly.it';
 
@@ -10,15 +11,6 @@ function runAsync(sql, params) {
     db.run(sql, params, function (err) {
       if (err) reject(err);
       else resolve({ lastID: this.lastID });
-    });
-  });
-}
-
-function getAsync(sql, params) {
-  return new Promise((resolve, reject) => {
-    db.get(sql, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
     });
   });
 }
@@ -59,8 +51,11 @@ function getProviderFromFilename(filePath) {
 async function main() {
   const filePath = process.argv[2];
   const roundMeters = parseFloat(process.argv[3]) || 10; // default 10 m
+  const radiusMeters = parseFloat(process.argv[4]) || roundMeters;
   if (!filePath) {
-    console.error('Usage: node scripts/import-lteitaly.js <file.ntm> [roundMeters=10]');
+    console.error(
+      'Usage: node scripts/import-lteitaly.js <file.ntm> [roundMeters=10] [radiusMeters]'
+    );
     process.exit(1);
   }
 
@@ -98,10 +93,7 @@ async function main() {
     const tokens = parts[9].trim().split(/\s+/);
     const siteName = tokens.slice(3).join(' ');
 
-    const existing = await getAsync(
-      'SELECT id, descrizione FROM markers WHERE lat = ? AND lng = ?',
-      [lat, lng]
-    );
+    const existing = await findNearbyMarker(lat, lng, radiusMeters);
 
     if (existing) {
       const [basePart, provPart] = (existing.descrizione || '').split(' | Provider:');

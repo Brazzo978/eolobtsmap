@@ -1,5 +1,6 @@
 const xlsx = require('xlsx');
 const db = require('../db');
+const { findNearbyMarker } = require('./utils');
 
 const SOURCE = 'AGCOM';
 
@@ -50,8 +51,9 @@ function getOrCreateUserId(username) {
 
 async function main() {
   const filePath = process.argv[2];
+  const radiusMeters = parseFloat(process.argv[3]) || 10;
   if (!filePath) {
-    console.error('Usage: node scripts/import-agcom.js <file.xlsx>');
+    console.error('Usage: node scripts/import-agcom.js <file.xlsx> [radiusMeters=10]');
     process.exit(1);
   }
 
@@ -93,6 +95,8 @@ async function main() {
   }
 
   for (const marker of markers.values()) {
+    const existing = await findNearbyMarker(marker.lat, marker.lng, radiusMeters);
+    if (existing) continue;
     const descrizione = Array.from(marker.descrizioni).join(' | ');
     const frequenze = Array.from(marker.frequenze).join(', ');
     const tags = marker.tags.size ? JSON.stringify(Array.from(marker.tags)) : null;

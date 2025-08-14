@@ -1,6 +1,7 @@
 const xlsx = require('xlsx');
 const proj4 = require('proj4');
 const db = require('../db');
+const { findNearbyMarker } = require('./utils');
 
 const SOURCE = 'ARIA Veneto';
 
@@ -92,8 +93,9 @@ function mapTags(gestore) {
 
 async function main() {
   const filePath = process.argv[2];
+  const radiusMeters = parseFloat(process.argv[3]) || 10;
   if (!filePath) {
-    console.error('Usage: node scripts/import-aria-veneto.js <file>');
+    console.error('Usage: node scripts/import-aria-veneto.js <file> [radiusMeters=10]');
     process.exit(1);
   }
 
@@ -109,6 +111,9 @@ async function main() {
       console.warn('Skipping row due to invalid coordinates');
       continue;
     }
+
+    const existing = await findNearbyMarker(lat, lng, radiusMeters);
+    if (existing) continue;
 
     const gestore = row['gestore'] || null;
     const tags = mapTags(gestore);
