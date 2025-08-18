@@ -66,3 +66,14 @@ cd backend
 ## Funzionalità Admin
 
 Gli utenti con ruolo *admin* possono attivare la **Modalità unione** dalla pagina principale e selezionare più marker vicini. I marker scelti vengono fusi in uno solo, combinando descrizioni, tag, frequenze e immagini dei marker originali.
+
+## Unione automatica di marker vicini
+
+Per accorpare tutti i marker entro una distanza specifica è disponibile lo script:
+
+```bash
+cd backend
+npm run merge-nearby -- <distanza-in-metri>
+```
+
+Al termine dell'esecuzione verrà mostrato il numero totale di marker uniti.
