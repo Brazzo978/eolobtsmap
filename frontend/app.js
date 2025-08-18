@@ -343,11 +343,15 @@ function renderTagInputs() {
         frequenze: freqEl ? freqEl.value : '',
       };
     });
-  } else if (selected.length === 1) {
-    editingTagDetails[selected[0]] = {
-      descrizione: document.getElementById('markerDesc').value,
-      frequenze: document.getElementById('markerFreq').value,
-    };
+  } else {
+    const descVal = document.getElementById('markerDesc').value;
+    const freqVal = document.getElementById('markerFreq').value;
+    selected.forEach((tag) => {
+      editingTagDetails[tag] = {
+        descrizione: descVal,
+        frequenze: freqVal,
+      };
+    });
   }
 
   const sourceTag = selected.find((t) => editingTagDetails[t]);
