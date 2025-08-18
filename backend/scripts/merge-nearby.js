@@ -59,8 +59,30 @@ async function mergeMarkers(ids) {
       markers[row.id].images.push({ url: row.url, didascalia: row.didascalia });
     }
   });
-  const list = ids.map(id => markers[id]).filter(Boolean);
+  let list = ids.map(id => markers[id]).filter(Boolean);
   if (list.length < 2) return;
+
+  // Remove markers that have the same description, keeping only the first
+  const descSeen = new Set();
+  list = list.filter(m => {
+    const desc = (m.descrizione || '').trim();
+    if (descSeen.has(desc)) return false;
+    descSeen.add(desc);
+    return true;
+  });
+
+  if (list.length < 2) {
+    const baseId = list[0]?.id;
+    if (baseId) {
+      for (const id of ids) {
+        if (id === baseId) continue;
+        await runAsync('UPDATE audit_logs SET marker_id = ? WHERE marker_id = ?', [baseId, id]);
+        await runAsync('DELETE FROM markers WHERE id = ?', [id]);
+      }
+    }
+    return;
+  }
+
   const baseId = list[0].id;
   const tagAgg = {};
   for (const m of list) {
