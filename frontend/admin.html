@@ -3,15 +3,329 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin</title>
-  <link
-    href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
-    rel="stylesheet"
-  />
-  <link
-    href="https://fonts.googleapis.com/icon?family=Material+Icons"
-    rel="stylesheet"
-  />
+  <title>Admin - BTSMAP</title>
+
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+      background-color: #f5f5f5;
+    }
+
+    nav.teal.lighten-2 {
+      background-color: #2c3e50 !important;
+    }
+
+    nav .nav-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    nav .nav-wrapper.container {
+      max-width: none;
+      width: 100%;
+    }
+
+    nav .nav-wrapper .brand-logo {
+      position: static;
+      flex-shrink: 0;
+    }
+
+    nav .nav-wrapper ul {
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    nav ul li a {
+      display: flex;
+      align-items: center;
+    }
+
+    nav ul li a[href="index.html"]:before {
+      content: "map";
+      font-family: "Material Icons";
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+
+    .main-container {
+      margin-top: 80px;
+      padding: 2rem;
+    }
+
+    section {
+      background: white;
+      margin-bottom: 2rem;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    section h5 {
+      color: #2c3e50;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #ecf0f1;
+    }
+
+    table.striped {
+      background: white;
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    table.striped thead {
+      background-color: #2c3e50;
+    }
+
+    table.striped thead th {
+      color: white;
+      font-weight: 500;
+      padding: 1rem;
+    }
+
+    table.striped tbody tr {
+      border-bottom: 1px solid #ecf0f1;
+    }
+
+    table.striped tbody td {
+      padding: 1rem;
+      vertical-align: middle;
+    }
+
+    table.striped tbody tr:hover {
+      background-color: #f8f9fa;
+    }
+
+    .btn {
+      background-color: #2c3e50;
+      border-radius: 4px;
+      text-transform: none;
+      font-weight: 500;
+    }
+
+    .btn:hover {
+      background-color: #34495e;
+    }
+
+    .btn-flat {
+      color: #e74c3c;
+      text-transform: none;
+    }
+
+    .btn-flat:hover {
+      background-color: rgba(231, 76, 60, 0.1);
+    }
+
+    .input-field input[type=text]:focus + label,
+    .input-field input[type=email]:focus + label,
+    .input-field input[type=password]:focus + label {
+      color: #2c3e50;
+    }
+
+    .input-field input[type=text]:focus,
+    .input-field input[type=email]:focus,
+    .input-field input[type=password]:focus {
+      border-bottom: 1px solid #2c3e50;
+      box-shadow: 0 1px 0 0 #2c3e50;
+    }
+
+    .input-field .prefix.active {
+      color: #2c3e50;
+    }
+
+    .dropdown-content li > a, .dropdown-content li > span {
+      color: #2c3e50;
+    }
+
+    .dropdown-content li:hover {
+      background-color: #ecf0f1;
+    }
+
+    .select-wrapper input.select-dropdown:focus {
+      border-bottom: 1px solid #2c3e50;
+    }
+
+    .tag-name {
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 8px 12px;
+      width: 100%;
+      font-size: 14px;
+      transition: all 0.3s ease;
+      background-color: #fafafa;
+    }
+
+    .tag-name:focus {
+      border-color: #2c3e50;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.1);
+      background-color: white;
+    }
+
+    .color-picker-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px;
+    }
+
+    .color-picker-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tag-color {
+      width: 50px;
+      height: 35px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: none;
+      padding: 0;
+    }
+
+    .tag-color:hover {
+      border-color: #2c3e50;
+      transform: scale(1.05);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .tag-color:focus {
+      outline: none;
+      border-color: #2c3e50;
+      box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.2);
+    }
+
+    .color-preview {
+      width: 35px;
+      height: 35px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .color-preview-inner {
+      width: 100%;
+      height: 100%;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+
+    .color-hex {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #666;
+      background: #f5f5f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      min-width: 70px;
+      text-align: center;
+    }
+
+    @media only screen and (max-width: 600px) {
+      .main-container {
+        padding: 1rem;
+      }
+      
+      section {
+        padding: 1rem;
+      }
+      
+      table.striped thead th,
+      table.striped tbody td {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+      }
+
+      .color-picker-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+      }
+
+      .color-hex {
+        font-size: 11px;
+        min-width: 60px;
+      }
+    }
+
+    .admin-card {
+      transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+    .admin-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+
+    .page-header {
+      color: #2c3e50;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 3px solid #2c3e50;
+    }
+
+    .status-message {
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 4px;
+      display: none;
+    }
+
+    .status-message.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status-message.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .new-tag-row {
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .deleteTag {
+      padding: 8px !important;
+      min-width: auto !important;
+      border-radius: 50% !important;
+    }
+
+    .deleteTag i {
+      margin: 0 !important;
+    }
+  </style>
 </head>
 <body>
   <div class="navbar-fixed">
@@ -24,61 +338,109 @@
       </div>
     </nav>
   </div>
-  <div class="container" style="margin-top: 2rem;">
-    <h3>Gestione Utenti</h3>
-    <section>
-      <h5>Crea Utente</h5>
-      <form id="userForm" class="row">
-        <div class="input-field col s12 m6">
-          <input type="text" id="newUsername" required />
-          <label for="newUsername">Username</label>
+  
+  <div class="main-container">
+    <div class="container">
+      <h3 class="page-header">Pannello di Amministrazione</h3>
+      
+      <div id="statusMessage" class="status-message"></div>
+      
+      <section class="admin-card">
+        <h5><i class="material-icons left">person_add</i>Crea Utente</h5>
+        <form id="userForm" class="row">
+          <div class="input-field col s12 m6">
+            <i class="material-icons prefix">account_circle</i>
+            <input type="text" id="newUsername" required />
+            <label for="newUsername">Username</label>
+          </div>
+          <div class="input-field col s12 m6">
+            <i class="material-icons prefix">email</i>
+            <input type="email" id="newEmail" required />
+            <label for="newEmail">Email</label>
+          </div>
+          <div class="input-field col s12 m6">
+            <i class="material-icons prefix">lock</i>
+            <input type="password" id="newPassword" required />
+            <label for="newPassword">Password</label>
+          </div>
+          <div class="input-field col s12 m6">
+            <i class="material-icons prefix">security</i>
+            <select id="newRole">
+              <option value="user">User</option>
+              <option value="editor">Editor</option>
+              <option value="admin">Admin</option>
+            </select>
+            <label for="newRole">Ruolo</label>
+          </div>
+          <div class="col s12" style="margin-top:1rem;">
+            <button type="submit" class="btn waves-effect waves-light">
+              <i class="material-icons left">add</i>Crea Utente
+            </button>
+          </div>
+        </form>
+      </section>
+      
+      <section class="admin-card">
+        <h5><i class="material-icons left">people</i>Utenti Esistenti</h5>
+        <div class="table-container">
+          <table class="striped responsive-table" id="usersTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Ruolo</th>
+                <th>Azioni</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
-        <div class="input-field col s12 m6">
-          <input type="email" id="newEmail" required />
-          <label for="newEmail">Email</label>
-        </div>
-        <div class="input-field col s12 m6">
-          <input type="password" id="newPassword" required />
-          <label for="newPassword">Password</label>
-        </div>
-        <div class="input-field col s12 m6">
-          <select id="newRole">
-            <option value="user">User</option>
-            <option value="editor">Editor</option>
-            <option value="admin">Admin</option>
-          </select>
-          <label for="newRole">Ruolo</label>
-        </div>
-        <div class="col s12" style="margin-top:1rem;">
-          <button type="submit" class="btn waves-effect">Crea</button>
-        </div>
-      </form>
-    </section>
-    <section>
-      <h5>Utenti Esistenti</h5>
-      <table class="striped" id="usersTable">
-        <thead><tr><th>ID</th><th>Username</th><th>Email</th><th>Ruolo</th><th>Azioni</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </section>
-    <section>
-      <h5>Colori Tag</h5>
-      <form id="tagColorForm">
-        <table class="striped" id="tagColorTable">
-          <thead><tr><th>Tag</th><th>Colore</th><th>Azioni</th></tr></thead>
-          <tbody></tbody>
-        </table>
-        <div class="col s12" style="margin-top:1rem;">
-          <button type="button" id="addTag" class="btn waves-effect">Aggiungi Tag</button>
-          <button type="submit" class="btn waves-effect">Salva</button>
-        </div>
-      </form>
-    </section>
+      </section>
+      
+      <section class="admin-card">
+        <h5><i class="material-icons left">palette</i>Gestione Colori Tag</h5>
+        <form id="tagColorForm">
+          <div class="table-container">
+            <table class="striped" id="tagColorTable">
+              <thead>
+                <tr>
+                  <th>Tag</th>
+                  <th>Colore</th>
+                  <th>Azioni</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="col s12" style="margin-top:1rem;">
+            <button type="button" id="addTag" class="btn waves-effect waves-light">
+              <i class="material-icons left">add</i>Aggiungi Tag
+            </button>
+            <button type="submit" class="btn waves-effect waves-light">
+              <i class="material-icons left">save</i>Salva Modifiche
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
   </div>
+
 <script>
 function tokenHeader() {
   return { Authorization: 'Bearer ' + localStorage.getItem('token'), 'Content-Type':'application/json' };
 }
+
+function showMessage(message, type = 'success') {
+  const statusEl = document.getElementById('statusMessage');
+  statusEl.textContent = message;
+  statusEl.className = `status-message ${type}`;
+  statusEl.style.display = 'block';
+  setTimeout(() => {
+    statusEl.style.display = 'none';
+  }, 5000);
+}
+
 function loadUsers() {
   fetch('/users', { headers: tokenHeader() })
     .then(r => r.json())
@@ -87,16 +449,36 @@ function loadUsers() {
       tbody.innerHTML = '';
       users.forEach(u => {
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${u.id}</td><td>${u.username}</td><td>${u.email}</td><td>${u.role}</td>`+
-          `<td><button data-id="${u.id}" class="deleteUser">Elimina</button></td>`;
+        tr.innerHTML = `
+          <td>${u.id}</td>
+          <td>${u.username}</td>
+          <td>${u.email}</td>
+          <td><span class="chip">${u.role}</span></td>
+          <td>
+            <button data-id="${u.id}" class="deleteUser btn-flat waves-effect">
+              <i class="material-icons left">delete</i>Elimina
+            </button>
+          </td>`;
         tbody.appendChild(tr);
       });
       document.querySelectorAll('.deleteUser').forEach(btn => {
         btn.addEventListener('click', () => {
-          fetch('/users/' + btn.dataset.id, { method: 'DELETE', headers: tokenHeader() })
-            .then(() => loadUsers());
+          if (confirm('Sei sicuro di voler eliminare questo utente?')) {
+            fetch('/users/' + btn.dataset.id, { method: 'DELETE', headers: tokenHeader() })
+              .then(response => {
+                if (response.ok) {
+                  showMessage('Utente eliminato con successo', 'success');
+                  loadUsers();
+                } else {
+                  showMessage('Errore durante l\'eliminazione dell\'utente', 'error');
+                }
+              });
+          }
         });
       });
+    })
+    .catch(error => {
+      showMessage('Errore nel caricamento degli utenti', 'error');
     });
 }
 
@@ -112,20 +494,64 @@ document.getElementById('userForm').addEventListener('submit', e => {
     .then(r => {
       if (r.ok) {
         e.target.reset();
+        showMessage('Utente creato con successo', 'success');
         loadUsers();
+        M.FormSelect.init(document.querySelectorAll('select'));
       } else {
-        alert('Errore creazione utente');
+        showMessage('Errore nella creazione dell\'utente', 'error');
       }
+    })
+    .catch(error => {
+      showMessage('Errore di connessione', 'error');
     });
 });
 
-function createTagRow(tag = '', color = '#000000') {
+function updateColorPreview(colorInput) {
+  const container = colorInput.closest('.color-picker-container');
+  const preview = container.querySelector('.color-preview-inner');
+  const hexDisplay = container.querySelector('.color-hex');
+  
+  const color = colorInput.value;
+  preview.style.backgroundColor = color;
+  hexDisplay.textContent = color.toUpperCase();
+}
+
+function createTagRow(tag = '', color = '#3498db') {
   const tr = document.createElement('tr');
+  tr.className = 'new-tag-row';
   tr.innerHTML = `
     <td><input type="text" class="tag-name" value="${tag}" placeholder="Nome tag"></td>
-    <td><input type="color" class="tag-color" value="${color}"></td>
-    <td><button type="button" class="btn-flat deleteTag">Rimuovi</button></td>`;
-  tr.querySelector('.deleteTag').addEventListener('click', () => tr.remove());
+    <td>
+      <div class="color-picker-container">
+        <div class="color-picker-wrapper">
+          <input type="color" class="tag-color" value="${color}">
+          <div class="color-preview">
+            <div class="color-preview-inner" style="background-color: ${color}"></div>
+          </div>
+          <span class="color-hex">${color.toUpperCase()}</span>
+        </div>
+      </div>
+    </td>
+    <td>
+      <button type="button" class="btn-flat deleteTag waves-effect red-text" title="Elimina tag">
+        <i class="material-icons">delete</i>
+      </button>
+    </td>`;
+  
+  const colorInput = tr.querySelector('.tag-color');
+  colorInput.addEventListener('input', (e) => updateColorPreview(e.target));
+  
+  tr.querySelector('.deleteTag').addEventListener('click', () => {
+    if (confirm('Sei sicuro di voler rimuovere questo tag?')) {
+      tr.remove();
+    }
+  });
+  
+  // Rimuovi la classe di animazione dopo l'animazione
+  setTimeout(() => {
+    tr.classList.remove('new-tag-row');
+  }, 300);
+  
   return tr;
 }
 
@@ -138,6 +564,9 @@ function loadTagColors() {
       Object.entries(tags).forEach(([tag, color]) => {
         tbody.appendChild(createTagRow(tag, color));
       });
+    })
+    .catch(error => {
+      showMessage('Errore nel caricamento dei colori dei tag', 'error');
     });
 }
 
@@ -149,32 +578,48 @@ document.getElementById('tagColorForm').addEventListener('submit', e => {
   e.preventDefault();
   const rows = document.querySelectorAll('#tagColorTable tbody tr');
   const data = {};
+  let hasEmptyNames = false;
+  
   rows.forEach(row => {
     const name = row.querySelector('.tag-name').value.trim();
     const color = row.querySelector('.tag-color').value;
     if (name) {
       data[name] = color;
+    } else {
+      hasEmptyNames = true;
     }
   });
+  
+  if (hasEmptyNames) {
+    showMessage('Alcuni tag non hanno un nome. Verranno ignorati nel salvataggio.', 'error');
+    return;
+  }
+  
   fetch('/tags', { method:'PUT', headers: tokenHeader(), body: JSON.stringify(data) })
     .then(r => {
       if (r.ok) {
+        showMessage('Colori dei tag salvati con successo', 'success');
         loadTagColors();
       } else {
-        alert('Errore salvataggio colori');
+        showMessage('Errore nel salvataggio dei colori', 'error');
       }
+    })
+    .catch(error => {
+      showMessage('Errore di connessione', 'error');
     });
 });
 
-loadUsers();
-loadTagColors();
+// Inizializzazione
+document.addEventListener('DOMContentLoaded', function() {
+  // Inizializza i componenti Materialize
+  M.FormSelect.init(document.querySelectorAll('select'));
+  
+  // Carica i dati
+  loadUsers();
+  loadTagColors();
+});
 </script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var selects = document.querySelectorAll('select');
-    M.FormSelect.init(selects);
-  });
-</script>
 </body>
 </html>
