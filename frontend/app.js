@@ -20,11 +20,19 @@ const insertMarkerBtn = document.getElementById('insertMarkerBtn');
 let savedLat, savedLng;
 const tagFilter = document.getElementById('tagFilter');
 const markerTagContainer = document.getElementById('markerTags');
+const tagTabsContainer = document.getElementById('tagTabsContainer');
+const tagTabs = document.getElementById('tagTabs');
+const tagTabContents = document.getElementById('tagTabContents');
+const viewTagTabsContainer = document.getElementById('viewTagTabsContainer');
+const viewTagTabs = document.getElementById('viewTagTabs');
+const viewTagContents = document.getElementById('viewTagContents');
 let tagColors = {};
 const mergeModeBtn = document.getElementById('mergeModeBtn');
 const mergeSelectedBtn = document.getElementById('mergeSelectedBtn');
 let mergeMode = false;
 const selectedMarkers = new Set();
+const form = document.getElementById('markerForm');
+let currentEditMarker = null;
 const selectedIcon = L.divIcon({
   className: 'custom-pin',
   html: '<i class="material-icons" style="color:#ff9800">place</i>',
@@ -291,8 +299,6 @@ if (searchBtn && searchInput) {
 
 const markersById = {};
 const modal = document.getElementById('markerModal');
-const form = document.getElementById('markerForm');
-let currentEditMarker = null;
 
 function clearSelection() {
   selectedMarkers.forEach((id) => {
@@ -317,6 +323,68 @@ function toggleSelectMarker(id) {
   if (mergeMode && mergeSelectedBtn) {
     mergeSelectedBtn.style.display = selectedMarkers.size >= 2 ? 'inline' : 'none';
   }
+}
+
+function renderTagInputs() {
+  if (!markerTagContainer || !tagTabsContainer) return;
+  const selected = Array.from(
+    markerTagContainer.querySelectorAll('input[type="checkbox"]:checked')
+  ).map((cb) => cb.value);
+  tagTabs.innerHTML = '';
+  tagTabContents.innerHTML = '';
+  if (selected.length <= 1) {
+    tagTabsContainer.style.display = 'none';
+    const descLabel = document.getElementById('markerDescLabel');
+    const freqLabel = document.getElementById('markerFreqLabel');
+    if (descLabel) descLabel.style.display = '';
+    if (freqLabel) freqLabel.style.display = '';
+    if (
+      selected.length === 1 &&
+      currentEditMarker &&
+      currentEditMarker.tagDetails &&
+      currentEditMarker.tagDetails[selected[0]]
+    ) {
+      document.getElementById('markerDesc').value =
+        currentEditMarker.tagDetails[selected[0]].descrizione || '';
+      document.getElementById('markerFreq').value =
+        currentEditMarker.tagDetails[selected[0]].frequenze || '';
+    }
+    return;
+  }
+  tagTabsContainer.style.display = 'block';
+  const descLabel = document.getElementById('markerDescLabel');
+  const freqLabel = document.getElementById('markerFreqLabel');
+  if (descLabel) descLabel.style.display = 'none';
+  if (freqLabel) freqLabel.style.display = 'none';
+  selected.forEach((tag, i) => {
+    const tabId = `tagTab-${i}`;
+    const li = document.createElement('li');
+    li.className = 'tab';
+    li.innerHTML = `<a href="#${tabId}">${tag}</a>`;
+    tagTabs.appendChild(li);
+    const div = document.createElement('div');
+    div.id = tabId;
+    div.innerHTML =
+      `<label>Descrizione:<textarea id="tagDesc-${tag}"></textarea></label>` +
+      `<label>Frequenze:<input type="text" id="tagFreq-${tag}" /></label>`;
+    tagTabContents.appendChild(div);
+  });
+  M.Tabs.init(tagTabs);
+  if (currentEditMarker && currentEditMarker.tagDetails) {
+    selected.forEach((tag) => {
+      const info = currentEditMarker.tagDetails[tag];
+      if (info) {
+        const d = document.getElementById(`tagDesc-${tag}`);
+        const f = document.getElementById(`tagFreq-${tag}`);
+        if (d) d.value = info.descrizione || '';
+        if (f) f.value = info.frequenze || '';
+      }
+    });
+  }
+}
+
+if (markerTagContainer) {
+  markerTagContainer.addEventListener('change', renderTagInputs);
 }
 
 function applyTagFilter() {
@@ -379,15 +447,35 @@ document.getElementById('cancelModal').addEventListener('click', () => {
 form.addEventListener('submit', (e) => {
   e.preventDefault();
   const id = document.getElementById('markerId').value;
+  const selected = Array.from(
+    document.querySelectorAll('#markerTags input[type="checkbox"]:checked')
+  ).map((cb) => cb.value);
+  const tagDetails = {};
+  if (selected.length <= 1) {
+    const tag = selected[0];
+    if (tag) {
+      tagDetails[tag] = {
+        descrizione: document.getElementById('markerDesc').value,
+        frequenze: document.getElementById('markerFreq').value,
+      };
+    }
+  } else {
+    selected.forEach((tag) => {
+      tagDetails[tag] = {
+        descrizione: document.getElementById(`tagDesc-${tag}`).value,
+        frequenze: document.getElementById(`tagFreq-${tag}`).value,
+      };
+    });
+  }
+  const firstInfo = selected.length ? tagDetails[selected[0]] : {};
   const marker = {
     nome: document.getElementById('markerName').value,
-    descrizione: document.getElementById('markerDesc').value,
-    frequenze: document.getElementById('markerFreq').value,
+    descrizione: firstInfo ? firstInfo.descrizione || '' : '',
+    frequenze: firstInfo ? firstInfo.frequenze || '' : '',
     lat: parseFloat(document.getElementById('markerLat').value),
     lng: parseFloat(document.getElementById('markerLng').value),
-    tags: Array.from(
-      document.querySelectorAll('#markerTags input[type="checkbox"]:checked')
-    ).map((cb) => cb.value),
+    tags: selected,
+    tagDetails,
     images: currentEditMarker && currentEditMarker.images
       ? currentEditMarker.images.slice()
       : [],
@@ -530,8 +618,22 @@ function openModal(marker) {
   }
   document.getElementById('markerId').value = marker.id || '';
   document.getElementById('markerName').value = marker.nome || '';
-  document.getElementById('markerDesc').value = marker.descrizione || '';
-  document.getElementById('markerFreq').value = marker.frequenze || '';
+  document.getElementById('markerDesc').value = '';
+  document.getElementById('markerFreq').value = '';
+  if (
+    marker.tags &&
+    marker.tags.length === 1 &&
+    marker.tagDetails &&
+    marker.tagDetails[marker.tags[0]]
+  ) {
+    document.getElementById('markerDesc').value =
+      marker.tagDetails[marker.tags[0]].descrizione || '';
+    document.getElementById('markerFreq').value =
+      marker.tagDetails[marker.tags[0]].frequenze || '';
+  } else {
+    document.getElementById('markerDesc').value = marker.descrizione || '';
+    document.getElementById('markerFreq').value = marker.frequenze || '';
+  }
   document.getElementById('markerLat').value = marker.lat;
   document.getElementById('markerLng').value = marker.lng;
   if (markerTagContainer) {
@@ -539,6 +641,7 @@ function openModal(marker) {
       cb.checked = marker.tags ? marker.tags.includes(cb.value) : false;
     });
   }
+  renderTagInputs();
   document.getElementById('markerImages').value = '';
   renderExistingImages();
   modal.classList.add('show');
@@ -589,17 +692,52 @@ function createTagIcon(tags) {
 
 function openMarkerView(marker, leafletMarker) {
   document.getElementById('viewTitle').textContent = marker.nome || 'Marker';
-  document.getElementById('viewDesc').textContent = marker.descrizione || '';
-  document.getElementById('viewFreq').textContent = marker.frequenze
-    ? `Frequenze: ${marker.frequenze}`
-    : '';
+  const viewDesc = document.getElementById('viewDesc');
+  const viewFreq = document.getElementById('viewFreq');
+  viewDesc.textContent = '';
+  viewFreq.textContent = '';
+  const tags = marker.tags || [];
+  if (marker.tagDetails && Object.keys(marker.tagDetails).length > 1) {
+    if (viewTagTabsContainer) viewTagTabsContainer.style.display = 'block';
+    viewDesc.style.display = 'none';
+    viewFreq.style.display = 'none';
+    viewTagTabs.innerHTML = '';
+    viewTagContents.innerHTML = '';
+    tags.forEach((tag, i) => {
+      const tabId = `viewTab-${i}`;
+      const li = document.createElement('li');
+      li.className = 'tab';
+      li.innerHTML = `<a href="#${tabId}">${tag}</a>`;
+      viewTagTabs.appendChild(li);
+      const div = document.createElement('div');
+      div.id = tabId;
+      const info = marker.tagDetails[tag] || {};
+      const freqText = info.frequenze ? `Frequenze: ${info.frequenze}` : '';
+      div.innerHTML = `<p>${info.descrizione || ''}</p><p>${freqText}</p>`;
+      viewTagContents.appendChild(div);
+    });
+    M.Tabs.init(viewTagTabs);
+  } else {
+    if (viewTagTabsContainer) viewTagTabsContainer.style.display = 'none';
+    viewDesc.style.display = '';
+    viewFreq.style.display = '';
+    const singleTag = tags[0];
+    const info =
+      marker.tagDetails && singleTag ? marker.tagDetails[singleTag] : null;
+    viewDesc.textContent = info ? info.descrizione || '' : marker.descrizione || '';
+    viewFreq.textContent = info && info.frequenze
+      ? `Frequenze: ${info.frequenze}`
+      : marker.frequenze
+      ? `Frequenze: ${marker.frequenze}`
+      : '';
+  }
   document.getElementById('viewLocalita').textContent = marker.localita
     ? `Località: ${marker.localita}`
     : '';
   document.getElementById('viewAutore').textContent = marker.autore
     ? `Inserito da: ${marker.autore}`
     : '';
-  document.getElementById('viewTags').textContent = (marker.tags || []).join(', ');
+  document.getElementById('viewTags').textContent = tags.join(', ');
   const carousel = document.getElementById('viewCarousel');
   const existing = M.Carousel.getInstance(carousel);
   if (existing) {

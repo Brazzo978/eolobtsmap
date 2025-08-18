@@ -321,9 +321,9 @@
           <input type="hidden" id="markerId" />
           <label> Nome: <input type="text" id="markerName" />
           </label>
-          <label> Descrizione: <textarea id="markerDesc"></textarea>
+          <label id="markerDescLabel"> Descrizione: <textarea id="markerDesc"></textarea>
           </label>
-          <label> Frequenze / Tecnologie: <input type="text" id="markerFreq" />
+          <label id="markerFreqLabel"> Frequenze / Tecnologie: <input type="text" id="markerFreq" />
           </label>
           <label> Latitudine: <input type="number" step="any" id="markerLat" />
           </label>
@@ -331,6 +331,10 @@
           </label>
           <label> Tag: <div id="markerTags"></div>
           </label>
+          <div id="tagTabsContainer" style="display:none">
+            <ul id="tagTabs" class="tabs"></ul>
+            <div id="tagTabContents"></div>
+          </div>
           <label> Immagini: <input type="file" id="markerImages" accept="image/*" multiple />
           </label>
           <div id="existingImages" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem;"></div>
@@ -364,6 +368,10 @@
         <div id="viewCarousel" class="carousel carousel-slider"></div>
         <div class="view-info">
           <h4 id="viewTitle"></h4>
+          <div id="viewTagTabsContainer" style="display:none">
+            <ul id="viewTagTabs" class="tabs"></ul>
+            <div id="viewTagContents"></div>
+          </div>
           <p id="viewDesc"></p>
           <p id="viewFreq"></p>
           <p id="viewLocalita"></p>
