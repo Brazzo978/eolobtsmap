@@ -8,7 +8,10 @@
     "update-map": "node scripts/update-map.js",
     "db": "node db-server.js",
     "import-agcom": "node scripts/import-agcom.js",
-    "import-arpat-toscana": "node scripts/import-arpat-toscana.js"
+    "import-arpat-toscana": "node scripts/import-arpat-toscana.js",
+    "import-aria-veneto": "node scripts/import-aria-veneto.js",
+    "import-lteitaly": "node scripts/import-lteitaly.js",
+    "merge-nearby": "node scripts/merge-nearby.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",

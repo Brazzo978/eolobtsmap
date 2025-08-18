@@ -1,5 +1,8 @@
 const xlsx = require('xlsx');
 const db = require('../db');
+const { mergeNearby } = require('./merge-nearby');
+
+const SOURCE = 'AGCOM';
 
 function parseCoord(coord) {
   if (!coord || typeof coord !== 'string') return null;
@@ -22,16 +25,35 @@ function mapTipo(t) {
 
 function runAsync(sql, params) {
   return new Promise((resolve, reject) => {
-    db.run(sql, params, err => {
-      if (err) reject(err); else resolve();
+    db.run(sql, params, function (err) {
+      if (err) reject(err);
+      else resolve({ lastID: this.lastID });
+    });
+  });
+}
+
+function getOrCreateUserId(username) {
+  return new Promise((resolve, reject) => {
+    db.get('SELECT id FROM users WHERE username = ?', [username], (err, row) => {
+      if (err) return reject(err);
+      if (row) return resolve(row.id);
+      db.run(
+        'INSERT INTO users (username, role) VALUES (?, ?)',
+        [username, 'user'],
+        function (err2) {
+          if (err2) return reject(err2);
+          resolve(this.lastID);
+        }
+      );
     });
   });
 }
 
 async function main() {
   const filePath = process.argv[2];
+  const radiusMeters = parseFloat(process.argv[3]) || 10;
   if (!filePath) {
-    console.error('Usage: node scripts/import-agcom.js <file.xlsx>');
+    console.error('Usage: node scripts/import-agcom.js <file.xlsx> [radiusMeters=10]');
     process.exit(1);
   }
 
@@ -41,6 +63,8 @@ async function main() {
 
   // Group rows by same lat, lng and localita
   const markers = new Map();
+
+  const userId = await getOrCreateUserId(SOURCE);
 
   for (const row of rows) {
     const lat = parseCoord(row['LAT.']);
@@ -73,19 +97,40 @@ async function main() {
   for (const marker of markers.values()) {
     const descrizione = Array.from(marker.descrizioni).join(' | ');
     const frequenze = Array.from(marker.frequenze).join(', ');
-    const tags = marker.tags.size ? JSON.stringify(Array.from(marker.tags)) : null;
+    const tagsArr = marker.tags.size ? Array.from(marker.tags) : [];
     const nome = marker.localita || descrizione;
+    const tagDetails = {};
+    tagsArr.forEach((t) => {
+      tagDetails[t] = { descrizione, frequenze };
+    });
+    const tagsStr = tagsArr.length ? JSON.stringify(tagsArr) : null;
+    const tagDetailsStr = JSON.stringify(tagDetails);
 
     try {
+      const result = await runAsync(
+        'INSERT INTO markers (lat, lng, descrizione, nome, autore, tag, localita, frequenze, tag_details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          marker.lat,
+          marker.lng,
+          descrizione,
+          nome,
+          SOURCE,
+          tagsStr,
+          marker.localita,
+          frequenze,
+          tagDetailsStr,
+        ]
+      );
       await runAsync(
-        'INSERT INTO markers (lat, lng, descrizione, nome, tag, localita, frequenze) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [marker.lat, marker.lng, descrizione, nome, tags, marker.localita, frequenze]
+        'INSERT INTO audit_logs (user_id, action, marker_id) VALUES (?, ?, ?)',
+        [userId, 'create', result.lastID]
       );
     } catch (err) {
       console.error('DB insert failed:', err.message);
     }
   }
 
+  await mergeNearby(radiusMeters);
   db.close();
 }
 

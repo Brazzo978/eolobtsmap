@@ -3,7 +3,12 @@ const proj4 = require('proj4');
 const db = require('../db');
 const { mergeNearby } = require('./merge-nearby');
 
-const SOURCE = 'ARPAT Toscana';
+const SOURCE = 'ARIA Veneto';
+
+// Gauss-Boaga (EPSG:3003) projection used by the dataset
+const gaussBoaga =
+  '+proj=tmerc +lat_0=0 +lon_0=9 +k=0.9996 +x_0=1500000 +y_0=0 +ellps=intl ' +
+  '+towgs84=-104.1,-49.1,-9.9,-0.971,-2.917,-0.714,-11.68 +units=m +no_defs';
 
 function runAsync(sql, params) {
   return new Promise((resolve, reject) => {
@@ -41,47 +46,56 @@ function parseFloatSafe(value) {
   return null;
 }
 
-// Gauss-Boaga (EPSG:3003) to WGS84
-const gaussBoaga =
-  '+proj=tmerc +lat_0=0 +lon_0=9 +k=0.9996 +x_0=1500000 +y_0=0 +ellps=intl ' +
-  '+towgs84=-104.1,-49.1,-9.9,-0.971,-2.917,-0.714,-11.68 +units=m +no_defs';
-
-function convertCoords(est, nord) {
+function convertCoords(x, y) {
+  const xNum = parseFloatSafe(x);
+  const yNum = parseFloatSafe(y);
+  if (xNum == null || yNum == null) return { lat: null, lng: null };
+  if (Math.abs(xNum) <= 180 && Math.abs(yNum) <= 90) {
+    return { lat: yNum, lng: xNum };
+  }
   try {
-    const [lng, lat] = proj4(gaussBoaga, proj4.WGS84, [est, nord]);
+    const [lng, lat] = proj4(gaussBoaga, proj4.WGS84, [xNum, yNum]);
     return { lat, lng };
-  } catch (e) {
+  } catch {
     return { lat: null, lng: null };
   }
 }
 
-function mapTags(tipologia, gestore) {
-  const t = (tipologia || '').trim().toLowerCase();
-  const g = (gestore || '').trim().toLowerCase();
-  if (t === 'telefonia mobile') {
-    return ['LTE/5G'];
-  }
-  if (t === 'radio - tv') {
-    return null; // ignore entry
-  }
-  if (t === 'altro') {
-    return ['Sconosciuto', 'WISP'];
-  }
-  if (t === '-') {
-    if (g.includes('eolo')) return ['EOLO'];
-    if (g.includes('open fiber')) return ['Openfiber'];
-    if (g.includes('opnet')) return ['Opnet'];
-    return ['Sconosciuto'];
-  }
-  // default
-  return ['Sconosciuto'];
+const lte5gOperators = new Set(
+  [
+    'Telecom Italia S.p.A.',
+    'Vodafone Italia S.p.A.',
+    'Wind Tre S.p.A.',
+    'Zefiro Net S.r.l.',
+    'Iliad Italia S.p.A.',
+  ].map((s) => s.toLowerCase())
+);
+
+const wispOperators = new Set(
+  [
+    'INFRACOM IT S.p.A.',
+    'Net Global S.r.l.',
+    'NETDISH S.p.A.',
+    'TRIVENET S.p.A.',
+  ].map((s) => s.toLowerCase())
+);
+
+function mapTags(gestore) {
+  if (!gestore) return null;
+  const g = gestore.trim().toLowerCase();
+  if (lte5gOperators.has(g)) return ['LTE/5G'];
+  if (g === 'american forces network south') return ['TV'];
+  if (wispOperators.has(g)) return ['WISP'];
+  if (g.includes('opnet')) return ['Opnet'];
+  if (g === 'rete ferroviaria italiana s.p.a.') return ['Sconosciuto'];
+  return null;
 }
 
 async function main() {
   const filePath = process.argv[2];
   const radiusMeters = parseFloat(process.argv[3]) || 10;
   if (!filePath) {
-    console.error('Usage: node scripts/import-arpat-toscana.js <file.xlsx> [radiusMeters=10]');
+    console.error('Usage: node scripts/import-aria-veneto.js <file> [radiusMeters=10]');
     process.exit(1);
   }
 
@@ -92,31 +106,24 @@ async function main() {
   const userId = await getOrCreateUserId(SOURCE);
 
   for (const row of rows) {
-    const nord = parseFloatSafe(row['Nord']);
-    const est = parseFloatSafe(row['Est']);
-    if (nord == null || est == null) {
+    const { lat, lng } = convertCoords(row['coord_x'], row['coord_y']);
+    if (lat == null || lng == null) {
       console.warn('Skipping row due to invalid coordinates');
       continue;
     }
 
-    const { lat, lng } = convertCoords(est, nord);
-    if (lat == null || lng == null) {
-      console.warn('Skipping row due to failed coordinate conversion');
-      continue;
-    }
+    const gestore = row['gestore'] || null;
+    const tags = mapTags(gestore);
+    if (!tags) continue;
 
-    const localita = row['Indirizzo'] || null;
-    const frequenze = row['Tecnologia'] || null;
-    const nome = row['Nome'] || localita;
-    const gestore = row['Gestore'] || null;
-
-    const tags = mapTags(row['Tipologia'], gestore);
-    if (!tags) continue; // skip entry when null returned
-
-    const descrizione = gestore || null;
+    const parts = [];
+    if (row['nome']) parts.push(row['nome']);
+    if (gestore) parts.push(gestore);
+    const descrizione = parts.join(' - ') || null;
+    const nome = row['nome'] || gestore || null;
     const tagDetails = {};
     tags.forEach((t) => {
-      tagDetails[t] = { descrizione, frequenze };
+      tagDetails[t] = { descrizione, frequenze: null };
     });
     const tagsStr = tags.length ? JSON.stringify(tags) : null;
     const tagDetailsStr = JSON.stringify(tagDetails);
@@ -124,7 +131,7 @@ async function main() {
     try {
       const result = await runAsync(
         'INSERT INTO markers (lat, lng, descrizione, nome, autore, tag, localita, frequenze, tag_details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [lat, lng, descrizione, nome, SOURCE, tagsStr, localita, frequenze, tagDetailsStr]
+        [lat, lng, descrizione, nome, SOURCE, tagsStr, null, null, tagDetailsStr]
       );
       await runAsync(
         'INSERT INTO audit_logs (user_id, action, marker_id) VALUES (?, ?, ?)',
@@ -140,3 +147,4 @@ async function main() {
 }
 
 main();
+
