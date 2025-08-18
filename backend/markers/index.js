@@ -12,7 +12,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
 
 function validateMarkerInput(req, res, next) {
-  const { lat, lng, descrizione, images, color, tags, frequenze } = req.body;
+  const { lat, lng, descrizione, images, color, tags, frequenze, tagDetails } = req.body;
   if (
     typeof lat !== 'number' ||
     typeof lng !== 'number' ||
@@ -44,6 +44,19 @@ function validateMarkerInput(req, res, next) {
   }
   if (frequenze && typeof frequenze !== 'string') {
     return res.status(400).json({ error: 'Invalid frequenze' });
+  }
+  if (tagDetails) {
+    if (typeof tagDetails !== 'object' || Array.isArray(tagDetails)) {
+      return res.status(400).json({ error: 'Invalid tagDetails' });
+    }
+    for (const [t, info] of Object.entries(tagDetails)) {
+      if (info.descrizione && typeof info.descrizione !== 'string') {
+        return res.status(400).json({ error: 'Invalid tagDetails' });
+      }
+      if (info.frequenze && typeof info.frequenze !== 'string') {
+        return res.status(400).json({ error: 'Invalid tagDetails' });
+      }
+    }
   }
   if (tags) {
     if (!Array.isArray(tags)) {
@@ -83,6 +96,14 @@ router.get('/', (req, res) => {
             parsedTags = [row.tag];
           }
         }
+        let parsedDetails = null;
+        if (row.tag_details) {
+          try {
+            parsedDetails = JSON.parse(row.tag_details);
+          } catch {
+            parsedDetails = null;
+          }
+        }
         markers[row.id] = {
           id: row.id,
           lat: row.lat,
@@ -94,6 +115,7 @@ router.get('/', (req, res) => {
           tags: parsedTags,
           localita: row.localita,
           frequenze: row.frequenze,
+          tagDetails: parsedDetails,
           timestamp: row.timestamp,
           images: [],
         };
@@ -131,6 +153,14 @@ router.get('/:id', (req, res) => {
         parsedTags = [rows[0].tag];
       }
     }
+    let parsedDetails = null;
+    if (rows[0].tag_details) {
+      try {
+        parsedDetails = JSON.parse(rows[0].tag_details);
+      } catch {
+        parsedDetails = null;
+      }
+    }
     const marker = {
       id: rows[0].id,
       lat: rows[0].lat,
@@ -142,6 +172,7 @@ router.get('/:id', (req, res) => {
       tags: parsedTags,
       localita: rows[0].localita,
       frequenze: rows[0].frequenze,
+       tagDetails: parsedDetails,
       timestamp: rows[0].timestamp,
       images: [],
     };
@@ -164,7 +195,7 @@ router.post(
   authorizeRoles('admin', 'editor'),
   validateMarkerInput,
   async (req, res, next) => {
-    const { lat, lng, descrizione, images, nome, autore, color, tags, frequenze } = req.body;
+    const { lat, lng, descrizione, images, nome, autore, color, tags, frequenze, tagDetails } = req.body;
 
     let localita = null;
     try {
@@ -181,7 +212,7 @@ router.post(
     }
 
     db.run(
-      'INSERT INTO markers (lat, lng, descrizione, nome, autore, color, tag, localita, frequenze) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      'INSERT INTO markers (lat, lng, descrizione, nome, autore, color, tag, localita, frequenze, tag_details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         lat,
         lng,
@@ -192,6 +223,7 @@ router.post(
         tags ? JSON.stringify(tags) : null,
         localita,
         frequenze || null,
+        tagDetails ? JSON.stringify(tagDetails) : null,
       ],
       function (err) {
         if (err) {
@@ -230,10 +262,10 @@ router.put(
   authorizeRoles('admin', 'editor'),
   validateMarkerInput,
   (req, res, next) => {
-    const { lat, lng, descrizione, images, nome, autore, color, tags, frequenze } = req.body;
+    const { lat, lng, descrizione, images, nome, autore, color, tags, frequenze, tagDetails } = req.body;
     const id = req.params.id;
     db.run(
-      'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ?, color = ?, tag = ?, frequenze = ? WHERE id = ?',
+      'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ?, color = ?, tag = ?, frequenze = ?, tag_details = ? WHERE id = ?',
       [
         lat,
         lng,
@@ -243,6 +275,7 @@ router.put(
         color || null,
         tags ? JSON.stringify(tags) : null,
         frequenze || null,
+        tagDetails ? JSON.stringify(tagDetails) : null,
         id,
       ],
       function (err) {
@@ -416,6 +449,34 @@ router.post(
         return res.status(404).json({ error: 'Markers not found' });
       }
       const baseId = list[0].id;
+      const tagAgg = {};
+      for (const m of list) {
+        if (m.tagDetails) {
+          for (const [t, info] of Object.entries(m.tagDetails)) {
+            if (!tagAgg[t]) {
+              tagAgg[t] = {
+                descrizione: info.descrizione || null,
+                frequenze: info.frequenze || null,
+              };
+            } else {
+              if (info.descrizione) {
+                tagAgg[t].descrizione = tagAgg[t].descrizione
+                  ? tagAgg[t].descrizione + ' | ' + info.descrizione
+                  : info.descrizione;
+              }
+              if (info.frequenze) {
+                const existing = tagAgg[t].frequenze
+                  ? tagAgg[t].frequenze.split(',').map((f) => f.trim())
+                  : [];
+                const newer = info.frequenze
+                  ? info.frequenze.split(',').map((f) => f.trim())
+                  : [];
+                tagAgg[t].frequenze = Array.from(new Set(existing.concat(newer))).join(', ');
+              }
+            }
+          }
+        }
+      }
       const agg = {
         lat: list.reduce((s, m) => s + m.lat, 0) / list.length,
         lng: list.reduce((s, m) => s + m.lng, 0) / list.length,
@@ -436,10 +497,11 @@ router.post(
           Array.from(new Set(list.map((m) => m.localita).filter(Boolean))).join(' | ') || null,
         tags: Array.from(new Set(list.flatMap((m) => m.tags || []))),
         images: list.flatMap((m) => m.images).slice(0, 10),
+        tagDetails: Object.keys(tagAgg).length ? tagAgg : null,
       };
       db.serialize(() => {
         db.run(
-          'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ?, color = ?, tag = ?, localita = ?, frequenze = ? WHERE id = ?',
+          'UPDATE markers SET lat = ?, lng = ?, descrizione = ?, nome = ?, autore = ?, color = ?, tag = ?, localita = ?, frequenze = ?, tag_details = ? WHERE id = ?',
           [
             agg.lat,
             agg.lng,
@@ -450,6 +512,7 @@ router.post(
             agg.tags.length ? JSON.stringify(agg.tags) : null,
             agg.localita,
             agg.frequenze,
+            agg.tagDetails ? JSON.stringify(agg.tagDetails) : null,
             baseId,
           ]
         );
@@ -464,32 +527,41 @@ router.post(
         const others = ids.filter((id) => id !== baseId);
         const deleteNext = (idx) => {
           if (idx >= others.length) {
-            db.get('SELECT * FROM markers WHERE id = ?', [baseId], (err2, row) => {
-              if (err2) {
-                return res.status(500).json({ error: 'DB error' });
-              }
-              let parsedTags = [];
-              if (row.tag) {
-                try {
-                  const t = JSON.parse(row.tag);
-                  parsedTags = Array.isArray(t) ? t : [row.tag];
-                } catch {
-                  parsedTags = [row.tag];
+              db.get('SELECT * FROM markers WHERE id = ?', [baseId], (err2, row) => {
+                if (err2) {
+                  return res.status(500).json({ error: 'DB error' });
                 }
-              }
-              const result = {
-                id: row.id,
-                lat: row.lat,
-                lng: row.lng,
-                nome: row.nome,
-                descrizione: row.descrizione,
-                autore: row.autore,
-                color: row.color,
-                localita: row.localita,
-                frequenze: row.frequenze,
-                tags: parsedTags,
-                images: agg.images,
-              };
+                let parsedTags = [];
+                if (row.tag) {
+                  try {
+                    const t = JSON.parse(row.tag);
+                    parsedTags = Array.isArray(t) ? t : [row.tag];
+                  } catch {
+                    parsedTags = [row.tag];
+                  }
+                }
+                let parsedDetails = null;
+                if (row.tag_details) {
+                  try {
+                    parsedDetails = JSON.parse(row.tag_details);
+                  } catch {
+                    parsedDetails = null;
+                  }
+                }
+                const result = {
+                  id: row.id,
+                  lat: row.lat,
+                  lng: row.lng,
+                  nome: row.nome,
+                  descrizione: row.descrizione,
+                  autore: row.autore,
+                  color: row.color,
+                  localita: row.localita,
+                  frequenze: row.frequenze,
+                  tags: parsedTags,
+                  tagDetails: parsedDetails,
+                  images: agg.images,
+                };
               return res.json(result);
             });
             return;
