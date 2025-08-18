@@ -1,7 +1,7 @@
 const xlsx = require('xlsx');
 const proj4 = require('proj4');
 const db = require('../db');
-const { findNearbyMarker } = require('./utils');
+const { findNearbyMarker, mergeTagData } = require('./utils');
 
 const SOURCE = 'ARIA Veneto';
 
@@ -112,9 +112,6 @@ async function main() {
       continue;
     }
 
-    const existing = await findNearbyMarker(lat, lng, radiusMeters);
-    if (existing) continue;
-
     const gestore = row['gestore'] || null;
     const tags = mapTags(gestore);
     if (!tags) continue;
@@ -124,12 +121,35 @@ async function main() {
     if (gestore) parts.push(gestore);
     const descrizione = parts.join(' - ') || null;
     const nome = row['nome'] || gestore || null;
+    const tagDetails = {};
+    tags.forEach((t) => {
+      tagDetails[t] = { descrizione, frequenze: null };
+    });
     const tagsStr = tags.length ? JSON.stringify(tags) : null;
+    const tagDetailsStr = JSON.stringify(tagDetails);
+
+    const existing = await findNearbyMarker(lat, lng, radiusMeters);
+    if (existing) {
+      const merged = mergeTagData(existing, tags, tagDetails);
+      try {
+        await runAsync(
+          'UPDATE markers SET tag = ?, tag_details = ? WHERE id = ?',
+          [JSON.stringify(merged.tags), JSON.stringify(merged.details), existing.id]
+        );
+        await runAsync(
+          'INSERT INTO audit_logs (user_id, action, marker_id) VALUES (?, ?, ?)',
+          [userId, 'update', existing.id]
+        );
+      } catch (err) {
+        console.error('DB update failed:', err.message);
+      }
+      continue;
+    }
 
     try {
       const result = await runAsync(
-        'INSERT INTO markers (lat, lng, descrizione, nome, autore, tag, localita, frequenze) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [lat, lng, descrizione, nome, SOURCE, tagsStr, null, null]
+        'INSERT INTO markers (lat, lng, descrizione, nome, autore, tag, localita, frequenze, tag_details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [lat, lng, descrizione, nome, SOURCE, tagsStr, null, null, tagDetailsStr]
       );
       await runAsync(
         'INSERT INTO audit_logs (user_id, action, marker_id) VALUES (?, ?, ?)',
