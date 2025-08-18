@@ -1,6 +1,6 @@
 const xlsx = require('xlsx');
 const db = require('../db');
-const { findNearbyMarker } = require('./utils');
+const { findNearbyMarker, mergeTagData } = require('./utils');
 
 const SOURCE = 'AGCOM';
 
@@ -95,25 +95,48 @@ async function main() {
   }
 
   for (const marker of markers.values()) {
-    const existing = await findNearbyMarker(marker.lat, marker.lng, radiusMeters);
-    if (existing) continue;
     const descrizione = Array.from(marker.descrizioni).join(' | ');
     const frequenze = Array.from(marker.frequenze).join(', ');
-    const tags = marker.tags.size ? JSON.stringify(Array.from(marker.tags)) : null;
+    const tagsArr = marker.tags.size ? Array.from(marker.tags) : [];
     const nome = marker.localita || descrizione;
+    const tagDetails = {};
+    tagsArr.forEach((t) => {
+      tagDetails[t] = { descrizione, frequenze };
+    });
+    const tagsStr = tagsArr.length ? JSON.stringify(tagsArr) : null;
+    const tagDetailsStr = JSON.stringify(tagDetails);
+
+    const existing = await findNearbyMarker(marker.lat, marker.lng, radiusMeters);
+    if (existing) {
+      const merged = mergeTagData(existing, tagsArr, tagDetails);
+      try {
+        await runAsync(
+          'UPDATE markers SET tag = ?, tag_details = ? WHERE id = ?',
+          [JSON.stringify(merged.tags), JSON.stringify(merged.details), existing.id]
+        );
+        await runAsync(
+          'INSERT INTO audit_logs (user_id, action, marker_id) VALUES (?, ?, ?)',
+          [userId, 'update', existing.id]
+        );
+      } catch (err) {
+        console.error('DB update failed:', err.message);
+      }
+      continue;
+    }
 
     try {
       const result = await runAsync(
-        'INSERT INTO markers (lat, lng, descrizione, nome, autore, tag, localita, frequenze) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO markers (lat, lng, descrizione, nome, autore, tag, localita, frequenze, tag_details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           marker.lat,
           marker.lng,
           descrizione,
           nome,
           SOURCE,
-          tags,
+          tagsStr,
           marker.localita,
           frequenze,
+          tagDetailsStr,
         ]
       );
       await runAsync(

@@ -21,7 +21,7 @@ function findNearbyMarker(lat, lng, radiusMeters) {
     const lngDeg = radiusMeters / (111320 * Math.cos(latRad));
     const params = [lat - latDeg, lat + latDeg, lng - lngDeg, lng + lngDeg];
     db.all(
-      'SELECT id, lat, lng, descrizione FROM markers WHERE lat BETWEEN ? AND ? AND lng BETWEEN ? AND ?',
+      'SELECT id, lat, lng, descrizione, tag, frequenze, tag_details FROM markers WHERE lat BETWEEN ? AND ? AND lng BETWEEN ? AND ?',
       params,
       (err, rows) => {
         if (err) return reject(err);
@@ -35,4 +35,52 @@ function findNearbyMarker(lat, lng, radiusMeters) {
   });
 }
 
-module.exports = { findNearbyMarker };
+function mergeTagData(existing, newTags, newDetails) {
+  let tags = [];
+  let details = {};
+  try {
+    tags = existing.tag ? JSON.parse(existing.tag) : [];
+  } catch {
+    tags = [];
+  }
+  try {
+    details = existing.tag_details ? JSON.parse(existing.tag_details) : {};
+  } catch {
+    details = {};
+  }
+
+  if (tags.length && Object.keys(details).length === 0) {
+    const defDesc = existing.descrizione || null;
+    const defFreq = existing.frequenze || null;
+    tags.forEach((t) => {
+      details[t] = { descrizione: defDesc, frequenze: defFreq };
+    });
+  }
+
+  newTags.forEach((t) => {
+    if (!tags.includes(t)) tags.push(t);
+    const info = newDetails[t] || { descrizione: null, frequenze: null };
+    if (details[t]) {
+      if (info.descrizione) {
+        details[t].descrizione = details[t].descrizione
+          ? `${details[t].descrizione} | ${info.descrizione}`
+          : info.descrizione;
+      }
+      if (info.frequenze) {
+        const existingF = details[t].frequenze
+          ? details[t].frequenze.split(',').map((f) => f.trim())
+          : [];
+        const newF = info.frequenze
+          ? info.frequenze.split(',').map((f) => f.trim())
+          : [];
+        details[t].frequenze = Array.from(new Set(existingF.concat(newF))).join(', ');
+      }
+    } else {
+      details[t] = { descrizione: info.descrizione || null, frequenze: info.frequenze || null };
+    }
+  });
+
+  return { tags, details };
+}
+
+module.exports = { findNearbyMarker, mergeTagData };

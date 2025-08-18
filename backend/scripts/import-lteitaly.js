@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const db = require('../db');
-const { findNearbyMarker } = require('./utils');
+const { findNearbyMarker, mergeTagData } = require('./utils');
 
 const SOURCE = 'https://lteitaly.it';
 
@@ -95,6 +95,13 @@ async function main() {
 
     const existing = await findNearbyMarker(lat, lng, radiusMeters);
 
+    const nome = `${lat},${lng}`;
+    const descrizione = `${siteName} | Provider:${provider}`;
+    const tagsArr = ['LTE/5G'];
+    const tagDetails = { 'LTE/5G': { descrizione, frequenze: null } };
+    const tagsStr = JSON.stringify(tagsArr);
+    const tagDetailsStr = JSON.stringify(tagDetails);
+
     if (existing) {
       const [basePart, provPart] = (existing.descrizione || '').split(' | Provider:');
       const providers = provPart
@@ -104,11 +111,19 @@ async function main() {
       const base = basePart && basePart.trim() ? basePart.trim() : siteName;
       providers.push(provider);
       const newDescrizione = `${base} | Provider:${providers.join(',')}`;
+      const merged = mergeTagData(existing, tagsArr, {
+        'LTE/5G': { descrizione: newDescrizione, frequenze: null },
+      });
       try {
-        await runAsync('UPDATE markers SET descrizione = ? WHERE id = ?', [
-          newDescrizione,
-          existing.id,
-        ]);
+        await runAsync(
+          'UPDATE markers SET descrizione = ?, tag = ?, tag_details = ? WHERE id = ?',
+          [
+            newDescrizione,
+            JSON.stringify(merged.tags),
+            JSON.stringify(merged.details),
+            existing.id,
+          ]
+        );
         await runAsync(
           'INSERT INTO audit_logs (user_id, action, marker_id) VALUES (?, ?, ?)',
           [userId, 'update', existing.id]
@@ -119,14 +134,10 @@ async function main() {
       continue;
     }
 
-    const nome = `${lat},${lng}`;
-    const descrizione = `${siteName} | Provider:${provider}`;
-    const tags = JSON.stringify(['LTE/5G']);
-
     try {
       const result = await runAsync(
-        'INSERT INTO markers (lat, lng, descrizione, nome, autore, tag, localita, frequenze) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [lat, lng, descrizione, nome, SOURCE, tags, null, null]
+        'INSERT INTO markers (lat, lng, descrizione, nome, autore, tag, localita, frequenze, tag_details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [lat, lng, descrizione, nome, SOURCE, tagsStr, null, null, tagDetailsStr]
       );
       await runAsync(
         'INSERT INTO audit_logs (user_id, action, marker_id) VALUES (?, ?, ?)',
