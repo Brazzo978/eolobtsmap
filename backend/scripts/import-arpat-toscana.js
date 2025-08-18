@@ -1,7 +1,7 @@
 const xlsx = require('xlsx');
 const proj4 = require('proj4');
 const db = require('../db');
-const { findNearbyMarker, mergeTagData } = require('./utils');
+const { mergeNearby } = require('./merge-nearby');
 
 const SOURCE = 'ARPAT Toscana';
 
@@ -121,24 +121,6 @@ async function main() {
     const tagsStr = tags.length ? JSON.stringify(tags) : null;
     const tagDetailsStr = JSON.stringify(tagDetails);
 
-    const existing = await findNearbyMarker(lat, lng, radiusMeters);
-    if (existing) {
-      const merged = mergeTagData(existing, tags, tagDetails);
-      try {
-        await runAsync(
-          'UPDATE markers SET tag = ?, tag_details = ? WHERE id = ?',
-          [JSON.stringify(merged.tags), JSON.stringify(merged.details), existing.id]
-        );
-        await runAsync(
-          'INSERT INTO audit_logs (user_id, action, marker_id) VALUES (?, ?, ?)',
-          [userId, 'update', existing.id]
-        );
-      } catch (err) {
-        console.error('DB update failed:', err.message);
-      }
-      continue;
-    }
-
     try {
       const result = await runAsync(
         'INSERT INTO markers (lat, lng, descrizione, nome, autore, tag, localita, frequenze, tag_details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -153,6 +135,7 @@ async function main() {
     }
   }
 
+  await mergeNearby(radiusMeters);
   db.close();
 }
 

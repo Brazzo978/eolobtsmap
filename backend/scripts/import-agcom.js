@@ -1,6 +1,6 @@
 const xlsx = require('xlsx');
 const db = require('../db');
-const { findNearbyMarker, mergeTagData } = require('./utils');
+const { mergeNearby } = require('./merge-nearby');
 
 const SOURCE = 'AGCOM';
 
@@ -106,24 +106,6 @@ async function main() {
     const tagsStr = tagsArr.length ? JSON.stringify(tagsArr) : null;
     const tagDetailsStr = JSON.stringify(tagDetails);
 
-    const existing = await findNearbyMarker(marker.lat, marker.lng, radiusMeters);
-    if (existing) {
-      const merged = mergeTagData(existing, tagsArr, tagDetails);
-      try {
-        await runAsync(
-          'UPDATE markers SET tag = ?, tag_details = ? WHERE id = ?',
-          [JSON.stringify(merged.tags), JSON.stringify(merged.details), existing.id]
-        );
-        await runAsync(
-          'INSERT INTO audit_logs (user_id, action, marker_id) VALUES (?, ?, ?)',
-          [userId, 'update', existing.id]
-        );
-      } catch (err) {
-        console.error('DB update failed:', err.message);
-      }
-      continue;
-    }
-
     try {
       const result = await runAsync(
         'INSERT INTO markers (lat, lng, descrizione, nome, autore, tag, localita, frequenze, tag_details) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -148,6 +130,7 @@ async function main() {
     }
   }
 
+  await mergeNearby(radiusMeters);
   db.close();
 }
 
