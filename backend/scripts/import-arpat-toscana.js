@@ -59,7 +59,7 @@ function mapTags(tipologia, gestore) {
   const t = (tipologia || '').trim().toLowerCase();
   const g = (gestore || '').trim().toLowerCase();
   if (t === 'telefonia mobile') {
-    return ['LTE/5G'];
+    return null; // skip mobile network antennas
   }
   if (t === 'radio - tv') {
     return null; // ignore entry
