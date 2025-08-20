@@ -740,6 +740,8 @@ function openMarkerView(marker, leafletMarker) {
     if (viewTagTabsContainer) viewTagTabsContainer.style.display = 'block';
     viewDesc.style.display = 'none';
     viewFreq.style.display = 'none';
+    const existingTabs = M.Tabs.getInstance(viewTagTabs);
+    if (existingTabs) existingTabs.destroy();
     viewTagTabs.innerHTML = '';
     viewTagContents.innerHTML = '';
     tags.forEach((tag, i) => {
