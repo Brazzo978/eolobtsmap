@@ -34,6 +34,20 @@ const selectedMarkers = new Set();
 const form = document.getElementById('markerForm');
 let currentEditMarker = null;
 let editingTagDetails = {};
+
+function normalizeTags(tags) {
+  if (Array.isArray(tags)) return tags;
+  if (!tags) return [];
+  if (typeof tags === 'string') {
+    const str = tags.trim();
+    try {
+      const parsed = JSON.parse(str);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {}
+    return str.split(',').map((t) => t.trim()).filter(Boolean);
+  }
+  return [];
+}
 const selectedIcon = L.divIcon({
   className: 'custom-pin',
   html: '<i class="material-icons" style="color:#ff9800">place</i>',
@@ -568,6 +582,7 @@ form.addEventListener('submit', (e) => {
 
 function addMarker(marker) {
   if (!marker.images) marker.images = [];
+  marker.tags = normalizeTags(marker.tags);
   const leafletMarker = L.marker([marker.lat, marker.lng], {
     draggable: false,
     icon: createTagIcon(marker.tags),
@@ -719,11 +734,14 @@ function openMarkerView(marker, leafletMarker) {
   const viewFreq = document.getElementById('viewFreq');
   viewDesc.textContent = '';
   viewFreq.textContent = '';
-  const tags = marker.tags || [];
+  const tags = normalizeTags(marker.tags);
+  marker.tags = tags;
   if (tags.length > 1) {
     if (viewTagTabsContainer) viewTagTabsContainer.style.display = 'block';
     viewDesc.style.display = 'none';
     viewFreq.style.display = 'none';
+    const existingTabs = M.Tabs.getInstance(viewTagTabs);
+    if (existingTabs) existingTabs.destroy();
     viewTagTabs.innerHTML = '';
     viewTagContents.innerHTML = '';
     tags.forEach((tag, i) => {

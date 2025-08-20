@@ -17,6 +17,38 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+function mergeDescriptions(descs) {
+  const segments = [];
+  for (const d of descs) {
+    if (!d) continue;
+    d.split('|').forEach(part => {
+      const seg = part.trim();
+      if (seg) segments.push(seg);
+    });
+  }
+  segments.sort((a, b) => b.length - a.length);
+  const result = [];
+  for (const seg of segments) {
+    const lower = seg.toLowerCase();
+    let skip = false;
+    for (let i = 0; i < result.length; i++) {
+      const existing = result[i];
+      const existingLower = existing.toLowerCase();
+      if (existingLower === lower || existingLower.includes(lower)) {
+        skip = true;
+        break;
+      }
+      if (lower.includes(existingLower)) {
+        result[i] = seg;
+        skip = true;
+        break;
+      }
+    }
+    if (!skip) result.push(seg);
+  }
+  return result.join(' | ') || null;
+}
+
 async function mergeMarkers(ids) {
   const placeholders = ids.map(() => '?').join(',');
   const sql = `SELECT m.*, mi.url, mi.didascalia FROM markers m LEFT JOIN marker_images mi ON m.id = mi.marker_id WHERE m.id IN (${placeholders})`;
@@ -66,9 +98,10 @@ async function mergeMarkers(ids) {
   // Remove markers that have the same description, keeping only the first
   const descSeen = new Set();
   list = list.filter(m => {
-    const desc = (m.descrizione || '').trim();
+    const desc = mergeDescriptions([m.descrizione]) || '';
     if (descSeen.has(desc)) return false;
     descSeen.add(desc);
+    m.descrizione = desc;
     return true;
   });
 
@@ -113,11 +146,16 @@ async function mergeMarkers(ids) {
       }
     }
   }
+  for (const info of Object.values(tagAgg)) {
+    if (info.descrizione) {
+      info.descrizione = mergeDescriptions([info.descrizione]);
+    }
+  }
   const agg = {
     lat: list.reduce((s, m) => s + m.lat, 0) / list.length,
     lng: list.reduce((s, m) => s + m.lng, 0) / list.length,
     nome: Array.from(new Set(list.map(m => m.nome).filter(Boolean))).join(' / ') || null,
-    descrizione: Array.from(new Set(list.map(m => m.descrizione).filter(Boolean))).join(' | ') || null,
+    descrizione: mergeDescriptions(list.map(m => m.descrizione)),
     autore: list.find(m => m.autore)?.autore || null,
     color: list.find(m => m.color)?.color || null,
     frequenze: Array.from(new Set(list.flatMap(m => m.frequenze ? m.frequenze.split(',').map(f => f.trim()) : []))).join(', ') || null,

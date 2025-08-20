@@ -61,16 +61,6 @@ function convertCoords(x, y) {
   }
 }
 
-const lte5gOperators = new Set(
-  [
-    'Telecom Italia S.p.A.',
-    'Vodafone Italia S.p.A.',
-    'Wind Tre S.p.A.',
-    'Zefiro Net S.r.l.',
-    'Iliad Italia S.p.A.',
-  ].map((s) => s.toLowerCase())
-);
-
 const wispOperators = new Set(
   [
     'INFRACOM IT S.p.A.',
@@ -83,7 +73,6 @@ const wispOperators = new Set(
 function mapTags(gestore) {
   if (!gestore) return null;
   const g = gestore.trim().toLowerCase();
-  if (lte5gOperators.has(g)) return ['LTE/5G'];
   if (g === 'american forces network south') return ['TV'];
   if (wispOperators.has(g)) return ['WISP'];
   if (g.includes('opnet')) return ['Opnet'];
