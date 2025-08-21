@@ -74,7 +74,7 @@ const tagsPromise = fetch('/tags')
       }
     });
     if (window.M && M.FormSelect && tagFilter) {
-      M.FormSelect.init(tagFilter);
+      M.FormSelect.init(tagFilter, { dropdownOptions: { closeOnClick: false } });
     }
   });
 
@@ -422,9 +422,16 @@ if (markerTagContainer) {
 }
 
 function applyTagFilter() {
-  const selected = tagFilter ? tagFilter.value : '';
+  const selected = tagFilter
+    ? Array.from(tagFilter.selectedOptions)
+        .map((o) => o.value)
+        .filter(Boolean)
+    : [];
   Object.values(markersById).forEach(({ data, marker }) => {
-    if (!selected || (data.tags && data.tags.includes(selected))) {
+    if (
+      selected.length === 0 ||
+      (data.tags && selected.some((s) => data.tags.includes(s)))
+    ) {
       if (!markerClusters.hasLayer(marker)) {
         markerClusters.addLayer(marker);
       }
