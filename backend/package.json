@@ -11,7 +11,8 @@
     "import-arpat-toscana": "node scripts/import-arpat-toscana.js",
     "import-aria-veneto": "node scripts/import-aria-veneto.js",
     "import-lteitaly": "node scripts/import-lteitaly.js",
-    "merge-nearby": "node scripts/merge-nearby.js"
+    "merge-nearby": "node scripts/merge-nearby.js",
+    "import-arpafvg": "node scripts/import-arpafvg.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
@@ -21,6 +22,7 @@
     "nodemailer": "^6.9.1",
     "proj4": "^2.19.10",
     "sqlite3": "^5.1.6",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "csv-parse": "^5.5.0"
   }
 }
