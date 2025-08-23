@@ -34,6 +34,10 @@ const selectedMarkers = new Set();
 const form = document.getElementById('markerForm');
 let currentEditMarker = null;
 let editingTagDetails = {};
+const annotationModeBtn = document.getElementById('annotationModeBtn');
+const annotationOverlay = document.getElementById('annotationOverlay');
+let annotationMode = false;
+let annotStartX, annotStartY, annotationRect;
 
 function normalizeTags(tags) {
   if (Array.isArray(tags)) return tags;
@@ -875,3 +879,80 @@ markerViewModal.addEventListener('click', (e) => {
     markerViewModal.classList.remove('show');
   }
 });
+
+if (annotationModeBtn && annotationOverlay) {
+  function clearAnnotation() {
+    if (annotationRect) {
+      annotationOverlay.removeChild(annotationRect);
+      annotationRect = null;
+    }
+  }
+
+  annotationModeBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    annotationMode = !annotationMode;
+    annotationOverlay.style.display = annotationMode ? 'block' : 'none';
+    clearAnnotation();
+  });
+
+  annotationOverlay.addEventListener('mousedown', (e) => {
+    if (!annotationMode) return;
+    annotStartX = e.offsetX;
+    annotStartY = e.offsetY;
+    annotationRect = document.createElement('div');
+    annotationRect.className = 'annotation-rect';
+    annotationRect.style.left = `${annotStartX}px`;
+    annotationRect.style.top = `${annotStartY}px`;
+    annotationOverlay.appendChild(annotationRect);
+    annotationOverlay.addEventListener('mousemove', onMouseMove);
+  });
+
+  function onMouseMove(e) {
+    const x = e.offsetX;
+    const y = e.offsetY;
+    const left = Math.min(x, annotStartX);
+    const top = Math.min(y, annotStartY);
+    const width = Math.abs(x - annotStartX);
+    const height = Math.abs(y - annotStartY);
+    annotationRect.style.left = `${left}px`;
+    annotationRect.style.top = `${top}px`;
+    annotationRect.style.width = `${width}px`;
+    annotationRect.style.height = `${height}px`;
+  }
+
+  annotationOverlay.addEventListener('mouseup', async () => {
+    if (!annotationMode || !annotationRect) return;
+    annotationOverlay.removeEventListener('mousemove', onMouseMove);
+    const x = parseInt(annotationRect.style.left);
+    const y = parseInt(annotationRect.style.top);
+    const w = parseInt(annotationRect.style.width);
+    const h = parseInt(annotationRect.style.height);
+    const canvas = await html2canvas(document.getElementById('map'));
+    const dataUrl = canvas.toDataURL('image/png');
+    const imgW = canvas.width;
+    const imgH = canvas.height;
+    const payload = {
+      image: dataUrl,
+      bbox: {
+        x: (x + w / 2) / imgW,
+        y: (y + h / 2) / imgH,
+        w: w / imgW,
+        h: h / imgH,
+      },
+    };
+    fetch('/annotate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }).then((res) => {
+      if (!res.ok) {
+        alert('Errore salvataggio annotazione');
+      } else {
+        alert('Annotazione salvata');
+      }
+    });
+    clearAnnotation();
+    annotationOverlay.style.display = 'none';
+    annotationMode = false;
+  });
+}
