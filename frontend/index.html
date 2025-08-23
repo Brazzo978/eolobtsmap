@@ -26,23 +26,6 @@
         z-index: 0;
       }
 
-      #annotationOverlay {
-        position: absolute;
-        top: 64px;
-        bottom: 0;
-        width: 100%;
-        display: none;
-        cursor: crosshair;
-        z-index: 1000;
-      }
-
-      .annotation-rect {
-        position: absolute;
-        border: 2px dashed red;
-        background: rgba(255, 0, 0, 0.2);
-        pointer-events: none;
-      }
-
       .modal {
         position: fixed;
         top: 0;
@@ -840,9 +823,6 @@
               <a href="#" id="mergeSelectedBtn" style="display:none">Unisci selezionati</a>
             </li>
             <li>
-              <a href="#" id="annotationModeBtn">Annotatore</a>
-            </li>
-            <li>
               <a href="about.html">About</a>
             </li>
           </ul>
@@ -850,7 +830,6 @@
       </nav>
     </div>
     <div id="map"></div>
-    <div id="annotationOverlay"></div>
     <div id="mapContextMenu">
       <button id="insertMarkerBtn">Inserisci marker</button>
     </div>
@@ -1113,7 +1092,6 @@
     <script src="https://unpkg.com/esri-leaflet@3.0.16/dist/esri-leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="app.js"></script>
 
     <script>
