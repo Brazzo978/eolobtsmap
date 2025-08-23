@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    
     <!-- Materialize CSS & Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
@@ -15,7 +16,6 @@
       body {
         height: 100%;
         margin: 0;
-        overflow: hidden;
       }
 
       #map {
@@ -30,35 +30,509 @@
         position: fixed;
         top: 0;
         left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
+        width: 100vw;
+        height: 100vh;
+        background: rgba(44, 62, 80, 0.85);
+        backdrop-filter: blur(8px);
         display: none;
         align-items: center;
         justify-content: center;
-        z-index: 2000;
+        z-index: 9999;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+       
+        box-sizing: border-box;
       }
 
       .modal.show {
         display: flex;
+        opacity: 1;
+        justify-content: flex-end;
+        align-content: space-around;
+        flex-wrap: nowrap;
+        flex-direction: column-reverse;
       }
 
       .modal-content {
-        background: #fff;
-        padding: 1rem;
-        max-width: 400px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 0;
+        max-width: 1000px;
+        width: 100%;
+        
+        border-radius: 16px;
+        box-shadow: 0 25px 80px rgba(44, 62, 80, 0.4);
+        overflow: hidden;
+        transform: scale(0.8);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        position: relative;
+        margin: auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .modal.show .modal-content {
+         transform: scale(1);
+      }
+
+      .modal-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 24px 40px;
+        border-radius: 16px 16px 0 0;
+        position: relative;
+        overflow: hidden;
+        flex-shrink: 0;
+      }
+
+      .modal-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+      }
+
+      .modal-header h2,
+      .modal-header h4 {
+        margin: 0;
+        font-size: 1.6rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .modal-header .material-icons {
+        font-size: 26px;
+        opacity: 0.9;
+      }
+
+      .close-button {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        color: white;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        z-index: 10;
+      }
+
+      .close-button:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(1.1);
+      }
+
+      .modal-body {
+        padding: 40px;
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+        flex: 1;
+      }
+
+      .form-group {
+        margin-bottom: 28px;
+        position: relative;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #2c3e50;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .form-group label .material-icons {
+        font-size: 18px;
+        color: #34495e;
+      }
+
+      .form-group input[type="text"],
+      .form-group input[type="number"],
+      .form-group input[type="email"],
+      .form-group input[type="password"],
+      .form-group textarea,
+      .form-group select {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #e1e8ed;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: #ffffff;
+        box-sizing: border-box;
+        font-family: inherit;
+      }
+
+      .form-group input:focus,
+      .form-group textarea:focus,
+      .form-group select:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        transform: translateY(-1px);
+      }
+
+      .form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+
+      .coordinates-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+
+      .file-input-wrapper {
+        position: relative;
+        display: inline-block;
         width: 100%;
       }
 
-      .modal-content label {
-        display: block;
-        margin-top: 0.5rem;
+      .file-input-wrapper input[type="file"] {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
       }
 
-      /* Ensure Leaflet markers and popups appear above the tile layers */
+      .file-input-display {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        border: 2px dashed #bdc3c7;
+        border-radius: 10px;
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        text-align: center;
+        color: #7f8c8d;
+      }
+
+      .file-input-display:hover {
+        border-color: #3498db;
+        background: #e8f4f8;
+        color: #2c3e50;
+      }
+
+      .file-input-display .material-icons {
+        font-size: 28px;
+        margin-bottom: 8px;
+        opacity: 0.7;
+      }
+
+      #existingImages {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 12px;
+        margin-top: 16px;
+      }
+
+      .existing-image {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      }
+
+      .existing-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .tag-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .tag-chip {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+      }
+
+      .modal-actions {
+        display: flex;
+        gap: 16px;
+        justify-content: flex-end;
+        padding: 24px 40px;
+        background: #f8f9fa;
+        border-top: 1px solid #e1e8ed;
+        border-radius: 0 0 16px 16px;
+        flex-shrink: 0;
+      }
+
+      .btn-modern {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+      }
+
+      .btn-secondary {
+        background: #ecf0f1;
+        color: #2c3e50;
+      }
+
+      .btn-secondary:hover {
+        background: #d5dbdb;
+        transform: translateY(-1px);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white;
+      }
+
+      .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+      }
+
+      #viewMarkerModal {
+        z-index: 9998;
+      }
+
+      #viewMarkerModal .modal-content {
+        max-width: 1200px;
+        display: flex;
+        flex-direction: row;
+        height: 80vh;
+        max-height: 800px;
+      }
+
+      .view-carousel-section {
+        width: 50%;
+        background: #000;
+        border-radius: 16px 0 0 16px;
+        overflow: hidden;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #viewCarousel {
+        width: 100%;
+        height: 100%;
+      }
+
+      #viewCarousel .carousel-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #viewCarousel .carousel-item img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+
+      .view-info-section {
+        width: 50%;
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 0 16px 16px 0;
+      }
+
+      .view-info-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 24px 32px;
+        position: relative;
+        overflow: hidden;
+        border-radius: 0 16px 0 0;
+      }
+
+      .view-info-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E") repeat;
+      }
+
+      .view-info-header h4 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .view-info-header .material-icons {
+        font-size: 24px;
+        opacity: 0.9;
+      }
+
+      .view-info-body {
+        flex: 1;
+        padding: 32px;
+        overflow-y: auto;
+      }
+
+      .view-info-item {
+        margin-bottom: 24px;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 12px;
+        border-left: 4px solid #3498db;
+      }
+
+      .view-info-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .view-info-item h5 {
+        margin: 0 0 8px 0;
+        color: #2c3e50;
+        font-size: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .view-info-item h5 .material-icons {
+        font-size: 18px;
+        color: #3498db;
+      }
+
+      .view-info-item p {
+        margin: 0;
+        color: #34495e;
+        line-height: 1.6;
+      }
+
+      .view-info-actions {
+        padding: 24px 32px;
+        background: #f8f9fa;
+        border-top: 1px solid #e1e8ed;
+        border-radius: 0 0 16px 0;
+      }
+
+      .view-tag-tabs {
+        margin-bottom: 16px;
+      }
+
+      .tabs .indicator {
+        display: none;
+      }
+
+      #loginModal,
+      #resetModal {
+        z-index: 9997;
+      }
+
+      #loginModal .modal-content,
+      #resetModal .modal-content {
+        max-width: 400px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .login-form,
+      .reset-form {
+        padding: 0;
+      }
+
+      .login-form .form-group,
+      .reset-form .form-group {
+        margin-bottom: 20px;
+      }
+
+      .login-form .form-group label,
+      .reset-form .form-group label {
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+      }
+
+      .login-form .form-group input,
+      .reset-form .form-group input {
+        padding: 10px 14px;
+        font-size: 0.95rem;
+      }
+
+      .login-actions,
+      .reset-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+        margin-top: 20px;
+      }
+
+      .forgot-password-link {
+        margin-top: 12px;
+        text-align: center;
+      }
+
+      .forgot-password-link a {
+        color: #3498db;
+        text-decoration: none;
+        font-size: 0.9rem;
+      }
+
+      .forgot-password-link a:hover {
+        text-decoration: underline;
+      }
+
       .leaflet-marker-pane,
       .leaflet-popup-pane {
-        z-index: 2001;
+        z-index: 1000;
       }
 
       nav .nav-wrapper {
@@ -149,18 +623,15 @@
         text-shadow: 0 0 2px #fff;
       }
 
-      #viewCarousel .carousel-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-      }
-
       #mapContextMenu {
         position: absolute;
         z-index: 2000;
         background: #fff;
         border: 1px solid #ccc;
         display: none;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        overflow: hidden;
       }
 
       #mapContextMenu.show {
@@ -170,52 +641,16 @@
       #mapContextMenu button {
         display: block;
         width: 100%;
-        padding: 8px 12px;
+        padding: 12px 16px;
         border: none;
         background: none;
         text-align: left;
         cursor: pointer;
+        transition: background 0.2s ease;
       }
 
       #mapContextMenu button:hover {
-        background: #eee;
-      }
-
-      #viewMarkerModal {
-        align-items: stretch;
-      }
-
-      #viewMarkerModal .modal-content {
-        width: 100%;
-        height: 100%;
-        max-width: none;
-        border-radius: 0;
-        padding: 0;
-        display: flex;
-        flex-direction: row;
-      }
-
-      #viewMarkerModal .carousel.carousel-slider {
-        width: 50%;
-        height: 100%;
-      }
-
-      #viewMarkerModal .view-info {
-        width: 50%;
-        overflow: auto;
-        padding: 1rem;
-      }
-
-      #markerModal {
-        align-items: stretch;
-      }
-
-      #markerModal .modal-content {
-        width: 100%;
-        height: 100%;
-        max-width: none;
-        border-radius: 0;
-        overflow: auto;
+        background: #f0f0f0;
       }
 
       /* Icone menu*/
@@ -247,7 +682,6 @@
         vertical-align: middle;
       }
 
-      /* Stile generale per le icone nel menu */
       nav ul li a {
         display: flex;
         align-items: center;
@@ -263,12 +697,93 @@
       nav .nav-wrapper .search-container .input-field label.active {
         color: white;
         transform: translateY(-9px) scale(0.8);
-        /* Ridotto da -140% */
         transform-origin: 0 0;
       }
 
-      .tabs .indicator {
-        display: none;
+      .modal-body::-webkit-scrollbar,
+      .view-info-body::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .modal-body::-webkit-scrollbar-track,
+      .view-info-body::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+      }
+
+      .modal-body::-webkit-scrollbar-thumb,
+      .view-info-body::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+      }
+
+      .modal-body::-webkit-scrollbar-thumb:hover,
+      .view-info-body::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+      }
+
+      @media (max-width: 768px) {
+        .modal {
+          padding: 10px;
+        }
+
+        .modal-content {
+          width: 100%;
+          max-height: calc(100vh - 20px);
+          border-radius: 12px;
+        }
+
+        .modal-header,
+        .view-info-header {
+          padding: 20px 24px;
+        }
+
+        .modal-header h2,
+        .view-info-header h4 {
+          font-size: 1.4rem;
+        }
+
+        .modal-body,
+        .view-info-body {
+          padding: 24px;
+          max-height: calc(100vh - 160px);
+        }
+
+        .modal-actions,
+        .view-info-actions {
+          padding: 20px 24px;
+          flex-direction: column;
+        }
+
+        .coordinates-row {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+
+        .form-group {
+          margin-bottom: 20px;
+        }
+
+        #viewMarkerModal .modal-content {
+          flex-direction: column;
+          height: 90vh;
+        }
+
+        .view-carousel-section {
+          width: 100%;
+          height: 40%;
+          border-radius: 12px 12px 0 0;
+        }
+
+        .view-info-section {
+          width: 100%;
+          height: 60%;
+          border-radius: 0 0 12px 12px;
+        }
+
+        .view-info-header {
+          border-radius: 0;
+        }
       }
     </style>
   </head>
@@ -318,90 +833,344 @@
     <div id="mapContextMenu">
       <button id="insertMarkerBtn">Inserisci marker</button>
     </div>
+
+    <!-- Modale marker -->
     <div id="markerModal" class="modal">
       <div class="modal-content">
-        <h2 id="modalTitle">Marker</h2>
-        <form id="markerForm">
-          <input type="hidden" id="markerId" />
-          <label> Nome: <input type="text" id="markerName" />
-          </label>
-          <label id="markerDescLabel"> Descrizione: <textarea id="markerDesc"></textarea>
-          </label>
-          <label id="markerFreqLabel"> Frequenze / Tecnologie: <input type="text" id="markerFreq" />
-          </label>
-          <label> Latitudine: <input type="number" step="any" id="markerLat" />
-          </label>
-          <label> Longitudine: <input type="number" step="any" id="markerLng" />
-          </label>
-          <label> Tag: <div id="markerTags"></div>
-          </label>
-          <div id="tagTabsContainer" style="display:none">
-            <ul id="tagTabs" class="tabs"></ul>
-            <div id="tagTabContents"></div>
-          </div>
-          <label> Immagini: <input type="file" id="markerImages" accept="image/*" multiple />
-          </label>
-          <div id="existingImages" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem;"></div>
-          <div style="margin-top:1rem;">
-            <button type="submit" class="btn">Salva</button>
-            <button type="button" id="cancelModal" class="btn grey lighten-1">Annulla</button>
-          </div>
-        </form>
-      </div>
-    </div>
-    <div id="loginModal" class="modal">
-      <div class="modal-content">
-        <h2>Login</h2>
-        <form id="loginForm">
-          <label> Username: <input type="text" id="loginUser" required />
-          </label>
-          <label> Password: <input type="password" id="loginPass" required />
-          </label>
-          <div style="margin-top:1rem;">
-            <button type="submit">Accedi</button>
-            <button type="button" id="cancelLogin">Annulla</button>
-          </div>
-          <div style="margin-top:0.5rem;">
-            <a href="#" id="forgotPass">Password dimenticata?</a>
-          </div>
-        </form>
-      </div>
-    </div>
-    <div id="viewMarkerModal" class="modal">
-      <div class="modal-content">
-        <div id="viewCarousel" class="carousel carousel-slider"></div>
-        <div class="view-info">
-          <h4 id="viewTitle"></h4>
-          <div id="viewTagTabsContainer" style="display:none">
-            <ul id="viewTagTabs" class="tabs"></ul>
-            <div id="viewTagContents"></div>
-          </div>
-          <p id="viewDesc"></p>
-          <p id="viewFreq"></p>
-          <p id="viewLocalita"></p>
-          <p id="viewAutore"></p>
-          <p id="viewTags"></p>
-          <div id="viewActions" style="margin-top:1rem;"></div>
+        <div class="modal-header">
+          <h2 id="modalTitle">
+            <i class="material-icons">place</i>
+            Nuovo Marker
+          </h2>
+          <button type="button" class="close-button" id="cancelModal">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="markerForm">
+            <input type="hidden" id="markerId" />
+            
+            <div class="form-group">
+              <label>
+                <i class="material-icons">label</i>
+                Nome
+              </label>
+              <input type="text" id="markerName" placeholder="Inserisci il nome del marker" required />
+            </div>
+
+            <div class="form-group">
+              <label id="markerDescLabel">
+                <i class="material-icons">description</i>
+                Descrizione
+              </label>
+              <textarea id="markerDesc" placeholder="Descrivi questo punto di interesse..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label id="markerFreqLabel">
+                <i class="material-icons">radio</i>
+                Frequenze / Tecnologie
+              </label>
+              <input type="text" id="markerFreq" placeholder="es. GSM 900/1800, LTE, 5G" />
+            </div>
+
+            <div class="coordinates-row">
+              <div class="form-group">
+                <label>
+                  <i class="material-icons">my_location</i>
+                  Latitudine
+                </label>
+                <input type="number" step="any" id="markerLat" placeholder="45.464211" required />
+              </div>
+              <div class="form-group">
+                <label>
+                  <i class="material-icons">location_on</i>
+                  Longitudine
+                </label>
+                <input type="number" step="any" id="markerLng" placeholder="9.191383" required />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <i class="material-icons">local_offer</i>
+                Tag
+              </label>
+              <div id="markerTags"></div>
+              <div class="tag-container" id="selectedTags"></div>
+            </div>
+
+            <div id="tagTabsContainer" style="display:none">
+              <ul id="tagTabs" class="tabs"></ul>
+              <div id="tagTabContents"></div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <i class="material-icons">photo_camera</i>
+                Immagini
+              </label>
+              <div class="file-input-wrapper">
+                <input type="file" id="markerImages" accept="image/*" multiple />
+                <div class="file-input-display">
+                  <div>
+                    <i class="material-icons">cloud_upload</i>
+                    <div>Clicca per selezionare le immagini</div>
+                    <small>PNG, JPG fino a 10MB</small>
+                  </div>
+                </div>
+              </div>
+              <div id="existingImages"></div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-modern btn-secondary" onclick="document.getElementById('cancelModal').click()">
+            <i class="material-icons">cancel</i>
+            Annulla
+          </button>
+          <button type="submit" form="markerForm" class="btn-modern btn-primary">
+            <i class="material-icons">save</i>
+            Salva Marker
+          </button>
         </div>
       </div>
     </div>
-    <div id="resetModal" class="modal">
+
+    <!-- Modale visualizzazione marker -->
+    <div id="viewMarkerModal" class="modal">
       <div class="modal-content">
-        <h2>Reset Password</h2>
-        <form id="resetForm">
-          <label>Email: <input type="email" id="resetEmail" required />
-          </label>
-          <div style="margin-top:1rem;">
-            <button type="submit">Invia</button>
-            <button type="button" id="cancelReset">Annulla</button>
+        <div class="view-carousel-section">
+          <div id="viewCarousel" class="carousel carousel-slider"></div>
+        </div>
+        <div class="view-info-section">
+          <div class="view-info-header">
+            <h4 id="viewTitle">
+              <i class="material-icons">visibility</i>
+              Dettagli Marker
+            </h4>
+            <button type="button" class="close-button" onclick="document.getElementById('viewMarkerModal').classList.remove('show')">
+              <i class="material-icons">close</i>
+            </button>
           </div>
-        </form>
+          <div class="view-info-body">
+            <div id="viewTagTabsContainer" class="view-tag-tabs" style="display:none">
+              <ul id="viewTagTabs" class="tabs"></ul>
+              <div id="viewTagContents"></div>
+            </div>
+            
+            <div class="view-info-item" id="viewDescContainer" style="display:none">
+              <h5>
+                <i class="material-icons">description</i>
+                Descrizione
+              </h5>
+              <p id="viewDesc"></p>
+            </div>
+
+            <div class="view-info-item" id="viewFreqContainer" style="display:none">
+              <h5>
+                <i class="material-icons">radio</i>
+                Frequenze / Tecnologie
+              </h5>
+              <p id="viewFreq"></p>
+            </div>
+
+            <div class="view-info-item" id="viewLocalitaContainer" style="display:none">
+              <h5>
+                <i class="material-icons">place</i>
+                Località
+              </h5>
+              <p id="viewLocalita"></p>
+            </div>
+
+            <div class="view-info-item" id="viewAutoreContainer" style="display:none">
+              <h5>
+                <i class="material-icons">person</i>
+                Autore
+              </h5>
+              <p id="viewAutore"></p>
+            </div>
+
+            <div class="view-info-item" id="viewTagsContainer" style="display:none">
+              <h5>
+                <i class="material-icons">local_offer</i>
+                Tag
+              </h5>
+              <div id="viewTags" class="tag-container"></div>
+            </div>
+          </div>
+          <div class="view-info-actions">
+            <div id="viewActions"></div>
+          </div>
+        </div>
       </div>
     </div>
+
+    <!-- Modale login-->
+    <div id="loginModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>
+            <i class="material-icons">login</i>
+            Accedi
+          </h2>
+          <button type="button" class="close-button" onclick="document.getElementById('loginModal').classList.remove('show')">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="loginForm" class="login-form">
+            <div class="form-group">
+              <label>
+                <i class="material-icons">person</i>
+                Username
+              </label>
+              <input type="text" id="loginUser" placeholder="Inserisci il tuo username" required />
+            </div>
+            <div class="form-group">
+              <label>
+                <i class="material-icons">lock</i>
+                Password
+              </label>
+              <input type="password" id="loginPass" placeholder="Inserisci la tua password" required />
+            </div>
+            <div class="login-actions">
+              <button type="button" class="btn-modern btn-secondary" id="cancelLogin">
+                <i class="material-icons">cancel</i>
+                Annulla
+              </button>
+              <button type="submit" class="btn-modern btn-primary">
+                <i class="material-icons">login</i>
+                Accedi
+              </button>
+            </div>
+            <div class="forgot-password-link">
+              <a href="#" id="forgotPass">Password dimenticata?</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modale reset password -->
+    <div id="resetModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>
+            <i class="material-icons">lock_reset</i>
+            Reset Password
+          </h2>
+          <button type="button" class="close-button" onclick="document.getElementById('resetModal').classList.remove('show')">
+            <i class="material-icons">close</i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="resetForm" class="reset-form">
+            <div class="form-group">
+              <label>
+                <i class="material-icons">email</i>
+                Email
+              </label>
+              <input type="email" id="resetEmail" placeholder="Inserisci la tua email" required />
+            </div>
+            <div class="reset-actions">
+              <button type="button" class="btn-modern btn-secondary" id="cancelReset">
+                <i class="material-icons">cancel</i>
+                Annulla
+              </button>
+              <button type="submit" class="btn-modern btn-primary">
+                <i class="material-icons">send</i>
+                Invia Reset
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/esri-leaflet@3.0.16/dist/esri-leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
     <script src="app.js"></script>
+
+    <script>
+      // Script di gestione modali
+      document.addEventListener('DOMContentLoaded', function() {
+        // Gestione apertura/chiusura modali
+        function showModal(modalId) {
+          document.getElementById(modalId).classList.add('show');
+        }
+
+        function hideModal(modalId) {
+          document.getElementById(modalId).classList.remove('show');
+        }
+
+        // Gestori per tutte le modali
+        const modals = ['markerModal', 'viewMarkerModal', 'loginModal', 'resetModal'];
+        
+        modals.forEach(modalId => {
+          const modal = document.getElementById(modalId);
+          if (modal) {
+            // Chiudi cliccando sullo sfondo
+            modal.addEventListener('click', function(e) {
+              if (e.target === this) {
+                hideModal(modalId);
+              }
+            });
+
+            // Chiudi con ESC
+            document.addEventListener('keydown', function(e) {
+              if (e.key === 'Escape' && modal.classList.contains('show')) {
+                hideModal(modalId);
+              }
+            });
+          }
+        });
+
+        // Gestori specifici per i bottoni di chiusura
+        document.getElementById('cancelModal')?.addEventListener('click', function() {
+          hideModal('markerModal');
+        });
+
+        document.getElementById('cancelLogin')?.addEventListener('click', function() {
+          hideModal('loginModal');
+        });
+
+        document.getElementById('cancelReset')?.addEventListener('click', function() {
+          hideModal('resetModal');
+        });
+
+        // Mostra i container delle informazioni
+        ['viewDescContainer', 'viewFreqContainer', 'viewLocalitaContainer', 'viewAutoreContainer'].forEach(id => {
+          const element = document.getElementById(id);
+          if (element) element.style.display = 'block';
+        });
+
+        // bototni modale di visualizzazione marker
+        const viewActions = document.getElementById('viewActions');
+        if (viewActions) {
+          viewActions.innerHTML = `
+            <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: flex-end;">
+              <button class="btn-modern btn-secondary" onclick="hideModal('viewMarkerModal')">
+                <i class="material-icons">close</i>
+                Chiudi
+              </button>
+              <button class="btn-modern btn-primary" onclick="showModal('markerModal')">
+                <i class="material-icons">edit</i>
+                Modifica
+              </button>
+              <button class="btn-modern btn-danger">
+                <i class="material-icons">delete</i>
+                Elimina
+              </button>
+            </div>
+          `;
+        }
+
+        window.showModal = showModal;
+        window.hideModal = hideModal;
+      });
+    </script>
   </body>
 </html>
