@@ -1,9 +1,10 @@
-const imagery = L.esri.basemapLayer('Imagery');
-const labels = L.esri.basemapLayer('ImageryLabels');
+const imagery = L.esri.basemapLayer('Imagery', { crossOrigin: 'anonymous' });
+const labels = L.esri.basemapLayer('ImageryLabels', { crossOrigin: 'anonymous' });
 const hybrid = L.layerGroup([imagery, labels]);
 const standard = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap',
-  maxZoom: 19
+  maxZoom: 19,
+  crossOrigin: 'anonymous'
 });
 const map = L.map('map', { layers: [hybrid] }).setView([45.4642, 9.1900], 13);
 L.control.layers({
@@ -927,7 +928,7 @@ if (annotationModeBtn && annotationOverlay) {
     const y = parseInt(annotationRect.style.top);
     const w = parseInt(annotationRect.style.width);
     const h = parseInt(annotationRect.style.height);
-    const canvas = await html2canvas(document.getElementById('map'));
+    const canvas = await html2canvas(document.getElementById('map'), { useCORS: true });
     const dataUrl = canvas.toDataURL('image/png');
     const imgW = canvas.width;
     const imgH = canvas.height;
