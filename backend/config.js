@@ -2,8 +2,6 @@ const defaultUploadsDir = '/opt/media';
 const defaultDbDir = '/opt/database';
 
 module.exports = {
-  enableMapCache: process.env.ENABLE_MAP_CACHE === 'true',
-  
   uploadsDir: process.env.UPLOADS_DIR || defaultUploadsDir,
   dbDir: process.env.DB_DIR || defaultDbDir,
   

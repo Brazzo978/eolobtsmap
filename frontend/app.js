@@ -74,7 +74,7 @@ const tagsPromise = fetch('/tags')
       }
     });
     if (window.M && M.FormSelect && tagFilter) {
-      M.FormSelect.init(tagFilter);
+      M.FormSelect.init(tagFilter, { dropdownOptions: { closeOnClick: false } });
     }
   });
 
@@ -422,9 +422,16 @@ if (markerTagContainer) {
 }
 
 function applyTagFilter() {
-  const selected = tagFilter ? tagFilter.value : '';
+  const selected = tagFilter
+    ? Array.from(tagFilter.selectedOptions)
+        .map((o) => o.value)
+        .filter(Boolean)
+    : [];
   Object.values(markersById).forEach(({ data, marker }) => {
-    if (!selected || (data.tags && data.tags.includes(selected))) {
+    if (
+      selected.length === 0 ||
+      (data.tags && selected.some((s) => data.tags.includes(s)))
+    ) {
       if (!markerClusters.hasLayer(marker)) {
         markerClusters.addLayer(marker);
       }
@@ -803,24 +810,25 @@ function openMarkerView(marker, leafletMarker) {
   }
   const actions = document.getElementById('viewActions');
   actions.innerHTML = '';
+  actions.style.cssText = 'display: flex; gap: 16px; flex-wrap: wrap; justify-content: flex-end;';
   const closeBtn = document.createElement('button');
-  closeBtn.textContent = 'Chiudi';
-  closeBtn.className = 'btn';
+  closeBtn.innerHTML = '<i class="material-icons">close</i>Chiudi';
+  closeBtn.className = 'btn-modern btn-secondary';
   closeBtn.addEventListener('click', () => markerViewModal.classList.remove('show'));
   actions.appendChild(closeBtn);
   if (currentUserRole === 'admin' || currentUserRole === 'editor') {
     const editBtn = document.createElement('button');
-    editBtn.textContent = 'Modifica';
-    editBtn.className = 'btn';
-    editBtn.style.marginLeft = '0.5rem';
+    editBtn.innerHTML = '<i class="material-icons">edit</i>Modifica';
+    editBtn.className = 'btn-modern btn-primary';
+    
     editBtn.addEventListener('click', () => {
       markerViewModal.classList.remove('show');
       openModal(marker);
     });
     const deleteBtn = document.createElement('button');
-    deleteBtn.textContent = 'Elimina pin';
-    deleteBtn.className = 'btn red';
-    deleteBtn.style.marginLeft = '0.5rem';
+    deleteBtn.innerHTML = '<i class="material-icons">delete</i>Elimina pin';
+    deleteBtn.className = 'btn-modern btn-danger';
+ 
     deleteBtn.addEventListener('click', () => {
       if (confirm('Eliminare questo marker?')) {
         fetch(`/markers/${marker.id}`, {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -134,6 +134,24 @@
         border-radius: 4px;
         border-left: 4px solid #2c3e50;
       }
+
+     .row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 20px;
+      }
+
+      .row .col {
+        display: flex;
+        flex: 1 1 auto;
+      }
+
+      .row .card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
     </style>
   </head>
   <body>
@@ -146,7 +164,7 @@
           </div>
           <ul>
             <li>
-              <a href="index.html">Mappa</a>
+              <a href="index.html">Map</a>
             </li>
           </ul>
         </div>
@@ -157,70 +175,70 @@
     <div class="container main-content">
       <h3>About Us</h3>
       
-      <!-- Scopo del Sito -->
+      <!-- Purpose of the Website -->
       <div class="section">
-        <h5><i class="material-icons left">info</i>Scopo del Sito</h5>
+        <h5><i class="material-icons left">info</i>Purpose of the Website</h5>
         <p> 
-          BTSMAP fornisce una <strong>mappa interattiva</strong> aperta a tutti per visualizzare i dati riguardanti tutti i tipi di antenne sul territorio italiano: radio AM, FM, DAB, TV digitale, LTE/5G, WISP (locali o Eolo) e antenne con servizi non classificati. 
+          BTSMAP provides an <strong>interactive map</strong> open to everyone to view data about all types of antennas in Italy: AM radio, FM, DAB, digital TV, LTE/5G, WISP (local or Eolo), and antennas with unclassified services. 
         </p>
         <p> 
-          La mappa incorpora il database ufficiale AGCOM disponibile <a href="http://www.catastofrequenze.agcom.it/catasto/pubblico" target="_blank" class="blue-text">qui</a>
+          The map incorporates the official AGCOM database available <a href="http://www.catastofrequenze.agcom.it/catasto/pubblico" target="_blank" class="blue-text">here</a>.
         </p>
         <p> 
-          La mappa incorpora il database ufficiale SIRA della toscana disponibile <a href="https://sira.arpat.toscana.it/sira/misure_rf/portale.php#postazioni" target="_blank" class="blue-text">qui</a>
+          The map incorporates the official SIRA database of Tuscany available <a href="https://sira.arpat.toscana.it/sira/misure_rf/portale.php#postazioni" target="_blank" class="blue-text">here</a>.
         </p>
         <p> 
-          La mappa incorpora il database ufficiale aria del veneto disponibile <a href="https://gaia.arpa.veneto.it/maps/285" target="_blank" class="blue-text">qui</a>
+          The map incorporates the official ARIA Veneto database available <a href="https://gaia.arpa.veneto.it/maps/285" target="_blank" class="blue-text">here</a>.
         </p>
         <p> 
-          La mappa inoltre è anche community driven, ovvero aggiornata su base delle segnalazioni degli utenti.
+          The map is also community-driven, meaning it is updated based on user reports.
         </p>
         <p> 
-          Al momento per contribuire, contatta l'amministratore e richiedi un account con permessi di <em>editor</em>. In futuro le submission saranno possibili direttamente via GUI. 
+          At the moment, to contribute, contact the administrator and request an account with <em>editor</em> permissions. In the future, submissions will be possible directly through the GUI. 
         </p>
       </div>
       
       <!-- Team Section -->
       <div class="section">
-        <h5><i class="material-icons left">group</i>Il Team</h5>
+        <h5><i class="material-icons left">group</i>The Team</h5>
         <div class="row">
           <div class="col s12 m6 l4">
             <div class="card">
               <div class="card-image">
-                <img src="img/team1.jpg" alt="ManuelB">
+                <!-- <img src="img/team1.jpg" alt="ManuelB"> -->
               </div>
               <div class="card-content">
-                <span class="card-title">Manuel B.</span>
-                <p>Founder di BTSMAP: ideatore del progetto e appassionato di tecnologia 4G/5G ed ogni tipo di antenna.</p>
+                <span class="card-title">Manuel</span>
+                <p>Founder of BTSMAP: creator of the project and technology enthusiast, passionate about 4G/5G and all kinds of antennas.</p>
               </div>
             </div>
           </div>
           <div class="col s12 m6 l4">
             <div class="card">
               <div class="card-image">
-                <img src="img/team1.jpg" alt="FrancescoT">
+                <!-- <img src="img/team1.jpg" alt="FrancescoT"> -->
               </div>
               <div class="card-content">
-                <span class="card-title">Francesco T.</span>
-                <p>Contributor (when possible) of the project and 4/5G enthusiast</p>
+                <span class="card-title">Francesco</span>
+                <p>Contributor (when possible) to the project and IT/TLC enthusiast.</p>
               </div>
             </div>
           </div>
         </div>
       </div>
       
-      <!-- Servizi Compute & Cloud -->
+      <!-- Compute & Cloud Services -->
       <div class="section">
-        <h5><i class="material-icons left">cloud</i>Servizi Compute &amp; Cloud</h5>
+        <h5><i class="material-icons left">cloud</i>Compute &amp; Cloud Services</h5>
         <p> 
-          L'infrastruttura di computing e servizi cloud è fornita da <a href="https://www.3klab.com/" target="_blank" class="blue-text">3klab</a>. 
+          The computing infrastructure and cloud services are provided by <a href="https://www.3klab.com/" target="_blank" class="blue-text">3klab</a>. 
         </p>
       </div>
       
       <!-- Contact Section -->
       <div class="section">
-        <h5><i class="material-icons left">contact_mail</i>Contattaci</h5>
-        <p>Per domande, collaborazioni o per chiedere l'account editor:</p>
+        <h5><i class="material-icons left">contact_mail</i>Contact Us</h5>
+        <p>For questions, collaborations, or to request an editor account:</p>
         <ul class="contact-list">
           <li>
             <i class="material-icons tiny">telegram</i>

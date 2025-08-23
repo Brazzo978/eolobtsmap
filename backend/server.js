@@ -37,10 +37,6 @@ app.put('/tags', authenticateToken, authorizeRole('admin'), (req, res) => {
   }
 });
 
-if (config.enableMapCache) {
-  require('./scripts/update-map');
-}
-
 // Return the frontend for the root path
 app.get('/', (req, res) => {
   res.sendFile(path.join(frontendPath, 'index.html'));
